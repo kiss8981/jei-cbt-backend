@@ -1,6 +1,6 @@
-import { IsString, Matches } from 'class-validator';
+import { IsString } from 'class-validator';
 
-export class RegisterUserAuthDto {
+export class RegisterUserAuthAppDto {
   @IsString({
     message: '전화번호를 입력해주세요.',
   })

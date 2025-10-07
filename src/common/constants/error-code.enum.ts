@@ -7,6 +7,18 @@ export const ErrorCodes = {
     code: 4001,
     message: '로그인이 필요합니다.',
   },
+  USER_PASSWORD_MISMATCH: {
+    code: 4002,
+    message: '비밀번호 또는 전화번호가 올바르지 않습니다.',
+  },
+  USER_TOKEN_EXPIRED: {
+    code: 4003,
+    message: '토큰이 만료되었습니다.',
+  },
+  USER_PHONE_DUPLICATE: {
+    code: 4004,
+    message: '이미 가입된 전화번호입니다.',
+  },
 };
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

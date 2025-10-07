@@ -11,16 +11,22 @@ import { plainToInstance } from 'class-transformer';
 import { LoginUserResponseAuthAppDto } from 'src/dtos/app/auth/login-user-response.auth.dto';
 import { RefreshTokenResponseAuthAppDto } from 'src/dtos/app/auth/refresh-token-response.auth.dto';
 import { RegisterUserResponseAuthAppDto } from 'src/dtos/app/auth/register-user-response.auth.dto';
+import { AdminUserRepository } from 'src/repositories/admin-user.repository';
+import { LoginUserAuthAdminDto } from 'src/dtos/admin/auth/login-user.auth.dto';
+import { LoginUserResponseAuthAdminDto } from 'src/dtos/admin/auth/login-user-response.auth.dto';
+import { AdminUser } from 'src/entities/admin-user.entity';
+import { RefreshTokenResponseAuthAdminDto } from 'src/dtos/admin/auth/refresh-token-response.auth.dto';
+import { AdminUserPayload } from 'src/common/decorators/admin-user.decorator';
 
 @Injectable()
-export class AppAuthService {
+export class AdminAuthService {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly adminUserRepository: AdminUserRepository,
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(dto: LoginUserAuthAppDto) {
-    const user = await this.userRepository.findOneByPhone(dto.phone);
+  async login(dto: LoginUserAuthAdminDto) {
+    const user = await this.adminUserRepository.findOneByLoginId(dto.id);
 
     if (!user) {
       throw new CustomHttpException(ErrorCodes.USER_PASSWORD_MISMATCH);
@@ -37,34 +43,7 @@ export class AppAuthService {
     console.log(user);
 
     return plainToInstance(
-      LoginUserResponseAuthAppDto,
-      {
-        accessToken: await this.createToken(user, 'access'),
-        refreshToken: await this.createToken(user, 'refresh'),
-      },
-      { excludeExtraneousValues: true, enableImplicitConversion: true },
-    );
-  }
-
-  async register(dto: RegisterUserAuthAppDto) {
-    const saltOrRounds = 10;
-    const hash = await bcrypt.hash(dto.password, saltOrRounds);
-
-    const user = await this.userRepository
-      .create({
-        name: dto.name,
-        phone: dto.phone,
-        password: hash,
-      })
-      .catch((e) => {
-        if (e.code === 'ER_DUP_ENTRY') {
-          throw new CustomHttpException(ErrorCodes.USER_PHONE_DUPLICATE);
-        }
-        throw e;
-      });
-
-    return plainToInstance(
-      RegisterUserResponseAuthAppDto,
+      LoginUserResponseAuthAdminDto,
       {
         accessToken: await this.createToken(user, 'access'),
         refreshToken: await this.createToken(user, 'refresh'),
@@ -80,10 +59,10 @@ export class AppAuthService {
       throw new CustomHttpException(ErrorCodes.USER_TOKEN_EXPIRED);
     }
 
-    const user = await this.userRepository.findById(decodeUser.sub);
+    const user = await this.adminUserRepository.findById(decodeUser.sub);
 
     return plainToInstance(
-      RefreshTokenResponseAuthAppDto,
+      RefreshTokenResponseAuthAdminDto,
       {
         accessToken: await this.createToken(user, 'access'),
         refreshToken: await this.createToken(user, 'refresh'),
@@ -92,15 +71,15 @@ export class AppAuthService {
     );
   }
 
-  async createToken(user: User, type: 'access' | 'refresh') {
-    const payload = { sub: user.id, type, name: user.name, phone: user.phone };
+  async createToken(user: AdminUser, type: 'access' | 'refresh') {
+    const payload = { sub: user.id, type, name: user.name, role: 'admin' };
 
     return this.jwtService.signAsync(payload, {
       expiresIn: type == 'access' ? '1h' : '7d',
       secret: process.env.JWT_SECRET,
     });
   }
-  async decodeToken(token: string) {
+  async decodeToken(token: string): Promise<AdminUserPayload> {
     return this.jwtService.verifyAsync(token, {
       secret: process.env.JWT_SECRET,
     });

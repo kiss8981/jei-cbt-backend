@@ -13,7 +13,7 @@ export class Answer extends BaseEntity {
   @JoinColumn({ name: 'questionId' })
   question: Question;
 
-  @Column('text', { nullable: false, comment: '보기 내용 또는 정답 텍스트' })
+  @Column('text', { nullable: true, comment: '보기 내용 또는 정답 텍스트' })
   content: string;
 
   @Column('boolean', {

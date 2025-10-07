@@ -1,0 +1,12 @@
+import { Column, Entity, OneToMany } from 'typeorm';
+import { BaseEntity } from './base.entity';
+import { Question } from './question.entity';
+
+@Entity()
+export class Unit extends BaseEntity {
+  @Column()
+  name: string;
+
+  @OneToMany(() => Question, (question) => question.unit)
+  questions: Question[];
+}
