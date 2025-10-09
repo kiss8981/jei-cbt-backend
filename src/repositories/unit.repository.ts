@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AdminUser } from 'src/entities/admin-user.entity';
 import { Unit } from 'src/entities/unit.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 @Injectable()
 export class UnitRepository {
@@ -10,6 +10,12 @@ export class UnitRepository {
     @InjectRepository(Unit)
     private readonly unitRepository: Repository<Unit>,
   ) {}
+
+  async findByIds(ids: number[]) {
+    return this.unitRepository.find({
+      where: { id: In(ids) },
+    });
+  }
 
   async findAndCount(
     page: number,

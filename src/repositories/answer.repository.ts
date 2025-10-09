@@ -18,7 +18,15 @@ export class AnswerRepository {
       : this.answerRepository.save(newQuestion);
   }
 
-  this() {
-    return this.answerRepository;
+  async findByQuestionId(questionId: number) {
+    return this.answerRepository.find({ where: { questionId } });
+  }
+
+  async deleteByQuestionId(questionId: number, entityManager?: EntityManager) {
+    if (entityManager) {
+      return entityManager.delete(Answer, { questionId });
+    } else {
+      return this.answerRepository.delete({ questionId });
+    }
   }
 }

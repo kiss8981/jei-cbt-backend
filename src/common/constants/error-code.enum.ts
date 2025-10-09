@@ -19,6 +19,10 @@ export const ErrorCodes = {
     code: 4004,
     message: '이미 가입된 전화번호입니다.',
   },
+  QUESTION_NOT_FOUND: {
+    code: 4100,
+    message: '존재하지 않는 문제입니다.',
+  },
 };
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

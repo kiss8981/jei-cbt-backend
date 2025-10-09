@@ -3,9 +3,6 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from 'src/entities/question.entity';
 
-/**
- * QuestionRepository: 복잡한 Question 엔티티 구조를 처리하는 데이터 접근 계층
- */
 @Injectable()
 export class QuestionRepository {
   constructor(
@@ -13,10 +10,59 @@ export class QuestionRepository {
     private readonly questionRepository: Repository<Question>,
   ) {}
 
+  async findById(id: number) {
+    return this.questionRepository.findOne({
+      where: { id },
+      relations: ['unit'],
+    });
+  }
+
   async create(question: Partial<Question>, entityManager?: EntityManager) {
     const newQuestion = this.questionRepository.create(question);
     return entityManager
       ? entityManager.save(newQuestion)
       : this.questionRepository.save(newQuestion);
+  }
+
+  async update(
+    id: number,
+    question: Partial<Question>,
+    entityManager?: EntityManager,
+  ) {
+    if (entityManager) {
+      await entityManager.update(Question, { id }, question);
+      return entityManager.findOne(Question, { where: { id } });
+    } else {
+      await this.questionRepository.update({ id }, question);
+      return this.questionRepository.findOne({ where: { id } });
+    }
+  }
+
+  async findAndCount(
+    page: number,
+    limit: number,
+    filters: { keyword?: string; unitIds?: number[] },
+  ): Promise<[Question[], number]> {
+    const queryBuilder = this.questionRepository.createQueryBuilder('question');
+
+    if (filters.keyword) {
+      queryBuilder.andWhere('question.title LIKE :keyword', {
+        keyword: `%${filters.keyword}%`,
+      });
+    }
+
+    if (filters.unitIds && filters.unitIds.length > 0) {
+      queryBuilder.andWhere('question.unitId IN (:...unitIds)', {
+        unitIds: filters.unitIds,
+      });
+    }
+
+    queryBuilder
+      .orderBy('question.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [questions, total] = await queryBuilder.getManyAndCount();
+    return [questions, total];
   }
 }

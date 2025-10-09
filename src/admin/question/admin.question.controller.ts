@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   Res,
@@ -11,6 +12,7 @@ import { AdminAuthGuard } from 'src/common/guards/admin-auth.guard';
 import { CreateQuestionAdminDto } from 'src/dtos/admin/question/create-question.admin.dto';
 import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-question-list-query.admin.dto';
 import { AdminQuestionService } from './admin.question.service';
+import { EditQuestionAdminDto } from 'src/dtos/admin/question/edit-question.admin.dto';
 
 @Controller('/admin/questions')
 // @UseGuards(AdminAuthGuard)
@@ -19,8 +21,12 @@ export class AdminQuestionController {
 
   @Get()
   async getQuestions(@Query() query: GetQuestionListQueryAdminDto) {
-    console.log(query);
-    return { message: 'List of questions', query };
+    return this.adminQuestionService.getAll(query.page, query.limit, query);
+  }
+
+  @Get(':questionId')
+  async getQuestion(@Param('questionId') questionId: number) {
+    return this.adminQuestionService.getById(questionId);
   }
 
   @Post()

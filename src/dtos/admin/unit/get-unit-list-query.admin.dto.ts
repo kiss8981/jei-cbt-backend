@@ -3,11 +3,11 @@ import { IsNumberString, IsOptional, IsString } from 'class-validator';
 export class GetUnitListQueryAdminDto {
   @IsOptional()
   @IsNumberString()
-  page: number = 1;
+  page: number;
 
   @IsOptional()
   @IsNumberString()
-  limit: number = 40;
+  limit: number;
 
   @IsOptional()
   @IsString()
