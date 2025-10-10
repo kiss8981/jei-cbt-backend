@@ -1,17 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { CreateUnitAdminDto } from 'src/dtos/admin/unit/create-unit.admin.dto';
-import { GetUnitListQueryAdminDto } from 'src/dtos/admin/unit/get-unit-list-query.admin.dto';
-import { GetUnitListAdminDto } from 'src/dtos/admin/unit/get-unit-list.admin.dto';
-import { GetUnitAdminDto } from 'src/dtos/admin/unit/get-unit.admin.dto';
+import { ErrorCodes } from 'src/common/constants/error-code.enum';
+import { CustomHttpException } from 'src/common/filters/custom-http.exception';
+import { GetUnitListQueryAppDto } from 'src/dtos/app/unit/get-unit-list-query.app.dto';
+import { GetUnitListAppDto } from 'src/dtos/app/unit/get-unit-list.app.dto';
 import { createPaginationDto } from 'src/dtos/common/pagination.dto';
 import { UnitRepository } from 'src/repositories/unit.repository';
 
 @Injectable()
-export class AdminUnitService {
+export class AppUnitService {
   constructor(private readonly unitRepository: UnitRepository) {}
 
-  async getAll(page: number, limit: number, query: GetUnitListQueryAdminDto) {
+  async getById(unitId: number) {
+    const unit = await this.unitRepository.findOneById(unitId);
+    if (!unit) {
+      throw new CustomHttpException(ErrorCodes.UNIT_NOT_FOUND);
+    }
+
+    return plainToInstance(
+      GetUnitListAppDto,
+      {
+        id: unit.id,
+        name: unit.name,
+      },
+      { excludeExtraneousValues: true },
+    );
+  }
+
+  async getAll(page: number, limit: number, query: GetUnitListQueryAppDto) {
     const { keyword } = query;
 
     const [units, total] = await this.unitRepository.findAndCount(page, limit, {
@@ -20,7 +36,7 @@ export class AdminUnitService {
 
     if (units.length === 0) {
       return plainToInstance(
-        createPaginationDto(GetUnitListAdminDto),
+        createPaginationDto(GetUnitListAppDto),
         {
           totalCount: 0,
           perPage: limit,
@@ -35,11 +51,11 @@ export class AdminUnitService {
     }
 
     return plainToInstance(
-      createPaginationDto(GetUnitListAdminDto),
+      createPaginationDto(GetUnitListAppDto),
       {
         items: units.map((unit) => {
           return plainToInstance(
-            GetUnitListAdminDto,
+            GetUnitListAppDto,
             {
               id: unit.id,
               name: unit.name,
@@ -55,26 +71,5 @@ export class AdminUnitService {
         excludeExtraneousValues: true,
       },
     );
-  }
-
-  async create(createUnitDto: CreateUnitAdminDto) {
-    const unit = await this.unitRepository.create({
-      name: createUnitDto.name,
-    });
-
-    return plainToInstance(
-      GetUnitAdminDto,
-      {
-        id: unit.id,
-        name: unit.name,
-      },
-      { excludeExtraneousValues: true },
-    );
-  }
-
-  async delete(id: number) {
-    await this.unitRepository.softDelete(id);
-
-    return true;
   }
 }

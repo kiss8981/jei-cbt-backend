@@ -17,6 +17,12 @@ export class QuestionRepository {
     });
   }
 
+  async findByUnitId(unitId: number) {
+    return this.questionRepository.find({
+      where: { unit: { id: unitId } },
+    });
+  }
+
   async create(question: Partial<Question>, entityManager?: EntityManager) {
     const newQuestion = this.questionRepository.create(question);
     return entityManager

@@ -17,6 +17,12 @@ export class UnitRepository {
     });
   }
 
+  async findOneById(id: number) {
+    return this.unitRepository.findOne({
+      where: { id },
+    });
+  }
+
   async findAndCount(
     page: number,
     limit: number,

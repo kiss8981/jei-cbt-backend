@@ -9,6 +9,8 @@ import { AppAuthModule } from './app/auth/app.auth.module';
 import { AdminAuthModule } from './admin/auth/admin.auth.module';
 import { AdminQuestionModule } from './admin/question/admin.question.module';
 import { AdminUnitModule } from './admin/unit/admin.unit.module';
+import { AppUnitModule } from './app/unit/app.unit.module';
+import { AppQuestionSessionModule } from './app/question/session/app.question-session.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { AdminUnitModule } from './admin/unit/admin.unit.module';
     AdminQuestionModule,
     AdminUnitModule,
     AppAuthModule,
+    AppUnitModule,
+    AppQuestionSessionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

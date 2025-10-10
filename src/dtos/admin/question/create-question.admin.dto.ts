@@ -72,8 +72,8 @@ export class CreateQuestionAdminDto {
     (o: CreateQuestionAdminDto) => o.type == QuestionType.MULTIPLE_SHORT_ANSWER,
   )
   @ValidateNested({ each: true })
-  @Type(() => CreateQuestionMultipleChoiceAnswerAdminDto)
-  answersForMultipleShortAnswer?: CreateQuestionMultipleChoiceAnswerAdminDto[];
+  @Type(() => CreateQuestionMultipleShortAnswerAdminDto)
+  answersForMultipleShortAnswer?: CreateQuestionMultipleShortAnswerAdminDto[];
 
   @ValidateIf((o: CreateQuestionAdminDto) => o.type == QuestionType.INTERVIEW)
   @IsNotEmpty({ message: '면접형 문제의 정답은 필수입니다.' })
@@ -81,7 +81,7 @@ export class CreateQuestionAdminDto {
   answersForInterview?: string; // 면접형 정답
 }
 
-export class CreateQuestionMultipleChoiceAnswerAdminDto {
+export class CreateQuestionMultipleShortAnswerAdminDto {
   @IsNotEmpty({ message: '정답 내용은 필수입니다.' })
   @IsString()
   content: string; // 정답 내용

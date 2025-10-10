@@ -23,6 +23,14 @@ export const ErrorCodes = {
     code: 4100,
     message: '존재하지 않는 문제입니다.',
   },
+  UNIT_NOT_FOUND: {
+    code: 4200,
+    message: '존재하지 않는 능력 단위 입니다.',
+  },
+  QUESTION_SESSION_NOT_FOUND: {
+    code: 4300,
+    message: '존재하지 않는 세션입니다.',
+  },
 };
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

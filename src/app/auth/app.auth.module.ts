@@ -16,5 +16,6 @@ import { UserRepository } from 'src/repositories/user.repository';
   ],
   controllers: [AppAuthController],
   providers: [AppAuthService, UserRepository],
+  exports: [AppAuthService],
 })
 export class AppAuthModule {}
