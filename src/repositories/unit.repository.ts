@@ -54,4 +54,9 @@ export class UnitRepository {
   async softDelete(id: number) {
     return this.unitRepository.softDelete({ id });
   }
+
+  async update(id: number, updateData: Partial<Unit>) {
+    await this.unitRepository.update({ id }, updateData);
+    return this.findOneById(id);
+  }
 }

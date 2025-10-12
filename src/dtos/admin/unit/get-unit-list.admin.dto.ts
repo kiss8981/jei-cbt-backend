@@ -6,4 +6,7 @@ export class GetUnitListAdminDto {
 
   @Expose()
   name: string;
+
+  @Expose()
+  isDisplayed: boolean;
 }

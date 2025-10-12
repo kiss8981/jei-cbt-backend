@@ -13,12 +13,6 @@ export class QuestionSession extends BaseEntity {
   @Column()
   userId: number;
 
-  @Column('timestamp', { nullable: false, comment: '세션 시작 시간' })
-  startedAt: Date;
-
-  @Column()
-  duration: number; // in seconds
-
   @Column({
     enum: SessionType,
     type: 'enum',

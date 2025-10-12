@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   Res,
   UseGuards,
@@ -14,6 +15,7 @@ import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-questi
 import { GetUnitListQueryAdminDto } from 'src/dtos/admin/unit/get-unit-list-query.admin.dto';
 import { AdminUnitService } from './admin.unit.service';
 import { CreateUnitAdminDto } from 'src/dtos/admin/unit/create-unit.admin.dto';
+import { UpdateUnitAdminDto } from 'src/dtos/admin/unit/update-unit.admin.dto';
 
 @Controller('/admin/units')
 @UseGuards(AdminAuthGuard)
@@ -31,8 +33,16 @@ export class AdminUnitController {
     return this.adminUnitService.create(body);
   }
 
-  @Delete('/:id')
-  async deleteUnit(@Param('id') id: number) {
+  @Put('/:unitId')
+  async updateUnit(
+    @Param('unitId') unitId: number,
+    @Body() body: UpdateUnitAdminDto,
+  ) {
+    return this.adminUnitService.update(unitId, body);
+  }
+
+  @Delete('/:unitId')
+  async deleteUnit(@Param('unitId') id: number) {
     return this.adminUnitService.delete(id);
   }
 }

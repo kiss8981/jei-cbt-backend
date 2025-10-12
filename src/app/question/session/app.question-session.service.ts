@@ -179,8 +179,6 @@ export class AppQuestionSessionService {
             type: SessionType.UNIT,
             referenceId: unitId,
             userId,
-            startedAt: new Date(),
-            duration: 0,
           },
           transactionalEntityManager,
         );
@@ -202,8 +200,6 @@ export class AppQuestionSessionService {
       GetUnitQuestionSessionAppDto,
       {
         id: session.id,
-        duration: session.duration,
-        startedAt: session.startedAt,
         unitId: unit.id,
         unitName: unit.name,
         type: session.type,
@@ -230,8 +226,6 @@ export class AppQuestionSessionService {
       GetUnitQuestionSessionAppDto,
       {
         id: session.id,
-        duration: session.duration,
-        startedAt: session.startedAt,
         unitId: unit.id,
         unitName: unit.name,
         type: session.type,

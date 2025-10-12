@@ -6,12 +6,6 @@ export class GetQuestionSessionAppDto {
   id: number;
 
   @Expose()
-  duration: number; // 세션 시간 (초 단위)
-
-  @Expose()
-  startedAt: Date; // 세션 시작 시간
-
-  @Expose()
   totalQuestions: number; // 총 문제 수
 }
 
