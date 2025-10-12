@@ -50,7 +50,7 @@ export class AppQuestionSessionService {
 
     switch (session.type) {
       case SessionType.UNIT:
-        const { nextQuestion, hasMore } =
+        const { nextQuestion, hasMore, nextQuestionCount, totalQuestionCount } =
           await this.questionSessionMapRepository.getNextQuestionBySessionId(
             session.id,
             currentQuestionMapId,
@@ -63,8 +63,49 @@ export class AppQuestionSessionService {
 
         return plainToInstance(GetQuestionWithStepAppDto, {
           isLastQuestion: !hasMore,
+          previousQuestionCount: totalQuestionCount - nextQuestionCount - 1,
+          nextQuestionCount: hasMore ? nextQuestionCount : 0,
           questionMapId: nextQuestion.id,
           question: questionResponse,
+        });
+      default:
+        throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
+  }
+
+  async getPreviousQuestion(
+    userId: number,
+    sessionId: number,
+    currentQuestionMapId: number,
+  ) {
+    const session = await this.questionSessionRepository.findOneById(sessionId);
+
+    if (!session || session.userId != userId) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
+
+    switch (session.type) {
+      case SessionType.UNIT:
+        const { previousQuestion, previousQuestionCount, totalQuestionCount } =
+          await this.questionSessionMapRepository.getPreviousQuestionBySessionId(
+            session.id,
+            currentQuestionMapId,
+          );
+        if (!previousQuestion) {
+          throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+        }
+        const question = await this.questionRepository.findById(
+          previousQuestion.questionId,
+        );
+
+        const questionResponse = await this.questionResponseMapper(question);
+
+        return plainToInstance(GetQuestionWithStepAppDto, {
+          isLastQuestion: false,
+          questionMapId: previousQuestion.id,
+          question: questionResponse,
+          previousQuestionCount: previousQuestionCount,
+          nextQuestionCount: totalQuestionCount - previousQuestionCount - 1,
         });
       default:
         throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
@@ -97,6 +138,8 @@ export class AppQuestionSessionService {
           isLastQuestion: false,
           questionMapId: currentQuestionMap.id,
           question: questionResponse,
+          previousQuestionCount: null,
+          nextQuestionCount: null,
         });
       default:
         throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);

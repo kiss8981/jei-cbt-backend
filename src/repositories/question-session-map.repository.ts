@@ -39,28 +39,42 @@ export class QuestionSessionMapRepository {
     sessionId: number,
     currentQuestionMapId?: number,
   ) {
-    const query = this.questionSessionMapRepository
+    const baseQuery = this.questionSessionMapRepository
       .createQueryBuilder('qsm')
+      .innerJoinAndSelect(
+        'qsm.question',
+        'question',
+        'question.deletedAt IS NULL',
+      )
       .where('qsm.questionSessionId = :sessionId', { sessionId });
 
+    const totalQuestionCount = await baseQuery.getCount();
+
     if (currentQuestionMapId) {
-      query.andWhere('qsm.id > :currentQuestionMapId', {
+      baseQuery.andWhere('qsm.id > :currentQuestionMapId', {
         currentQuestionMapId,
       });
     }
 
-    query.orderBy('qsm.id', 'ASC').limit(2);
+    const remainingCount = await baseQuery.getCount();
 
-    const questions = await query.getMany();
+    const nextQuestion = await baseQuery
+      .orderBy('qsm.id', 'ASC')
+      .limit(1)
+      .getOne();
 
-    await this.questionSessionMapRepository.update(
-      { id: questions[0].id },
-      { isOpened: true },
-    );
+    if (nextQuestion) {
+      await this.questionSessionMapRepository.update(
+        { id: nextQuestion.id },
+        { isOpened: true },
+      );
+    }
 
     return {
-      nextQuestion: questions[0],
-      hasMore: questions.length > 1,
+      nextQuestion,
+      hasMore: remainingCount > 1,
+      nextQuestionCount: remainingCount - 1,
+      totalQuestionCount,
     };
   }
 
@@ -68,33 +82,60 @@ export class QuestionSessionMapRepository {
     sessionId: number,
     currentQuestionMapId: number,
   ) {
-    const query = this.questionSessionMapRepository
+    const baseQuery = this.questionSessionMapRepository
       .createQueryBuilder('qsm')
+      .innerJoinAndSelect(
+        'qsm.question',
+        'question',
+        'question.deletedAt IS NULL',
+      )
       .where('qsm.questionSessionId = :sessionId', { sessionId });
 
+    const totalQuestionCount = await baseQuery.getCount();
+
     if (currentQuestionMapId) {
-      query.andWhere('qsm.id < :currentQuestionMapId', {
+      baseQuery.andWhere('qsm.id < :currentQuestionMapId', {
         currentQuestionMapId,
       });
     }
 
-    query.orderBy('qsm.id', 'DESC').limit(2);
-    const questions = await query.getMany();
+    const remainingCount = await baseQuery.getCount();
+    const previousQuestion = await baseQuery
+      .orderBy('qsm.id', 'DESC')
+      .limit(1)
+      .getOne();
 
     return {
-      previousQuestion: questions[0],
-      hasMore: questions.length > 1,
+      previousQuestion,
+      hasMore: remainingCount > 1,
+      previousQuestionCount: remainingCount - 1,
+      totalQuestionCount,
     };
   }
 
   async getLastOpenedQuestionBySessionId(sessionId: number) {
-    return this.questionSessionMapRepository.findOne({
-      where: { questionSessionId: sessionId, isOpened: true },
-      order: { id: 'DESC' },
-    });
+    const lastOpenedQuestion = await this.questionSessionMapRepository
+      .createQueryBuilder('qsm')
+      .innerJoinAndSelect(
+        'qsm.question',
+        'question',
+        'question.deletedAt IS NULL',
+      )
+      .where('qsm.questionSessionId = :sessionId', { sessionId })
+      .andWhere('question.deletedAt IS NULL')
+      .andWhere('qsm.isOpened = true')
+      .orderBy('qsm.id', 'DESC')
+      .limit(1)
+      .getOne();
+
+    return lastOpenedQuestion;
   }
 
   async findById(id: number) {
     return this.questionSessionMapRepository.findOne({ where: { id } });
+  }
+
+  async updateById(id: number, updateData: Partial<QuestionSessionMap>) {
+    return this.questionSessionMapRepository.update({ id }, updateData);
   }
 }

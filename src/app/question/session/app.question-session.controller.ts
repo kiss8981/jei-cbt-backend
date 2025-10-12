@@ -54,6 +54,19 @@ export class AppQuestionSessionController {
     );
   }
 
+  @Get(':sessionId/previous')
+  async getPreviousQuestion(
+    @Param('sessionId') sessionId: number,
+    @User() user: UserPayload,
+    @Query() query: GetQuestionNextQueryAppDto,
+  ) {
+    return this.appQuestionSessionService.getPreviousQuestion(
+      user.sub,
+      sessionId,
+      query.currentQuestionMapId,
+    );
+  }
+
   @Post(':sessionId/submit/:questionMapId')
   async submitAnswer(
     @Param('sessionId') sessionId: number,

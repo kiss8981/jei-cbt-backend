@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { User } from './user.entity';
-import { SessionType } from 'src/common/constants/session-type.enum';
 import { Question } from './question.entity';
 import { QuestionSession } from './question-session.entity';
 import { SubmissionAnswerRequestAppDto } from 'src/dtos/app/question/submission-answer-request.app.dto';
@@ -37,4 +36,11 @@ export class QuestionSessionMap extends BaseEntity {
 
   @Column({ type: 'json', nullable: true, comment: '사용자 답안' })
   userAnswer: SubmissionAnswerRequestAppDto;
+
+  @Column({
+    type: 'datetime',
+    nullable: true,
+    comment: '사용자가 문제를 푼 시각',
+  })
+  answeredAt: Date;
 }

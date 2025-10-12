@@ -34,8 +34,6 @@ export class AppAuthService {
       throw new CustomHttpException(ErrorCodes.USER_PASSWORD_MISMATCH);
     }
 
-    console.log(user);
-
     return plainToInstance(
       LoginUserResponseAuthAppDto,
       {

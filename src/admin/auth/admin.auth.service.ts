@@ -40,8 +40,6 @@ export class AdminAuthService {
       throw new CustomHttpException(ErrorCodes.USER_PASSWORD_MISMATCH);
     }
 
-    console.log(user);
-
     return plainToInstance(
       LoginUserResponseAuthAdminDto,
       {

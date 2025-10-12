@@ -1,5 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
@@ -22,14 +23,10 @@ export class SubmissionAnswerRequestAppDto {
   @IsNotEmpty({ message: '진위형 문제의 정답은 필수입니다.' })
   answersForTrueFalse?: boolean; // 진위형 정답
 
-  @ValidateIf(
-    (o: SubmissionAnswerRequestAppDto) =>
-      o.type == QuestionType.MULTIPLE_CHOICE,
-  )
-  @IsNotEmpty({ message: '정답은 필수입니다.' })
-  @ValidateNested({ each: true })
+  @ValidateIf((o) => o.type === QuestionType.MULTIPLE_CHOICE)
+  @IsArray({ message: '정답은 배열이어야 합니다.' })
   @Type(() => Number)
-  answersForMultipleChoice?: number[];
+  answersForMultipleChoice: number[];
 
   @ValidateIf(
     (o: SubmissionAnswerRequestAppDto) => o.type == QuestionType.MATCHING,
@@ -70,7 +67,7 @@ export class SubmissionAnswersForMatchingAppDto {
 
   @IsNumber()
   @IsNotEmpty({ message: '연결형 문제의 오른쪽 항목은 필수입니다.' })
-  rightItem: number; // 연결형 오른쪽 항목
+  rightItemId: number; // 연결형 오른쪽 항목
 }
 
 export class SubmissionAnswersForMultipleShortAppDto {
