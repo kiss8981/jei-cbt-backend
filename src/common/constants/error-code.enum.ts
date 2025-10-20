@@ -31,6 +31,27 @@ export const ErrorCodes = {
     code: 4300,
     message: '존재하지 않는 세션입니다.',
   },
+
+  S3_FILE_GET_ERROR: {
+    code: 5100,
+    message: '파일을 가져오는 데 실패했습니다.',
+  },
+  S3_FILE_COPY_ERROR: {
+    code: 5101,
+    message: '파일을 복사하는 데 실패했습니다.',
+  },
+  S3_FILE_DELETE_ERROR: {
+    code: 5102,
+    message: '파일을 삭제하는 데 실패했습니다.',
+  },
+  S3_PRESIGNED_URL_ERROR: {
+    code: 5103,
+    message: '파일 업로드 URL 생성에 실패했습니다.',
+  },
+  S3_UNSUPPORTED_FILE_TYPE: {
+    code: 5104,
+    message: '지원하지 않는 파일 형식입니다.',
+  },
 };
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

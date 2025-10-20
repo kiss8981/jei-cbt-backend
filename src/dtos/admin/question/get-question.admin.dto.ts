@@ -1,5 +1,6 @@
 import { Expose } from 'class-transformer';
 import { QuestionType } from 'src/common/constants/question-type.enum';
+import { GetPhotoMappingAdminDto } from '../upload/get-photo-mapping.admin.dto';
 
 export class GetQuestionAdminDto {
   @Expose()
@@ -19,6 +20,9 @@ export class GetQuestionAdminDto {
 
   @Expose()
   unitName: string;
+
+  @Expose()
+  photos: GetPhotoMappingAdminDto;
 
   @Expose()
   createdAt: Date;

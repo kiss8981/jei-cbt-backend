@@ -9,11 +9,15 @@ import { Answer } from 'src/entities/answer.entity';
 import { AnswerRepository } from 'src/repositories/answer.repository';
 import { Unit } from 'src/entities/unit.entity';
 import { UnitRepository } from 'src/repositories/unit.repository';
+import { PhotoMapRepository } from 'src/repositories/photo-map-repository';
+import { PhotoMap } from 'src/entities/photo-map.entity';
+import { AdminUploadModule } from '../upload/admin.upload.module';
 
 @Module({
   imports: [
     AdminAuthModule,
-    TypeOrmModule.forFeature([Question, Answer, Unit]),
+    AdminUploadModule,
+    TypeOrmModule.forFeature([Question, Answer, Unit, PhotoMap]),
   ],
   controllers: [AdminQuestionController],
   providers: [
@@ -21,6 +25,7 @@ import { UnitRepository } from 'src/repositories/unit.repository';
     QuestionRepository,
     AnswerRepository,
     UnitRepository,
+    PhotoMapRepository,
   ],
 })
 export class AdminQuestionModule {}

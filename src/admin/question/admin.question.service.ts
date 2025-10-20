@@ -5,7 +5,7 @@ import { ErrorCodes } from 'src/common/constants/error-code.enum';
 import { QuestionType } from 'src/common/constants/question-type.enum';
 import { CustomHttpException } from 'src/common/filters/custom-http.exception';
 import { CreateQuestionAdminDto } from 'src/dtos/admin/question/create-question.admin.dto';
-import { EditQuestionAdminDto } from 'src/dtos/admin/question/edit-question.admin.dto';
+import { UpdateQuestionAdminDto } from 'src/dtos/admin/question/update-question.admin.dto';
 import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-question-list-query.admin.dto';
 import { GetQuestionListAdminDto } from 'src/dtos/admin/question/get-question-list.admin.dto';
 import {
@@ -18,13 +18,17 @@ import {
   GetShortAnswerQuestionAdminDto,
   GetTrueFalseQuestionAdminDto,
 } from 'src/dtos/admin/question/get-question.admin.dto';
+import { GetPhotoMappingAdminDto } from 'src/dtos/admin/upload/get-photo-mapping.admin.dto';
 import { createPaginationDto } from 'src/dtos/common/pagination.dto';
 import { Answer } from 'src/entities/answer.entity';
 import { Question } from 'src/entities/question.entity';
 import { AnswerRepository } from 'src/repositories/answer.repository';
+import { PhotoMapRepository } from 'src/repositories/photo-map-repository';
 import { QuestionRepository } from 'src/repositories/question.repository';
 import { UnitRepository } from 'src/repositories/unit.repository';
 import { EntityManager, Repository } from 'typeorm';
+import { AdminUploadService } from '../upload/admin.upload.service';
+import { PhotoMappingTypeEnum } from 'src/common/constants/photo-mapping-type.enum';
 
 @Injectable()
 export class AdminQuestionService {
@@ -34,6 +38,8 @@ export class AdminQuestionService {
     private readonly unitRepository: UnitRepository,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
+    private readonly photoMapRepository: PhotoMapRepository,
+    private readonly adminUploadService: AdminUploadService,
   ) {}
 
   async getAll(
@@ -182,10 +188,37 @@ export class AdminQuestionService {
     return { message: '문제가 성공적으로 생성되었습니다.' };
   }
 
+  async update(id: number, dto: UpdateQuestionAdminDto) {
+    const question = await this.questionRepository.findById(id);
+    if (!question) throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+
+    await this.questionRepository.update(id, {
+      title: dto.title,
+      explanation: dto.explanation,
+      additionalText: dto.additionalText,
+    });
+
+    return this.getById(id);
+  }
+
   async getById(id: number) {
     const question = await this.questionRepository.findById(id);
     if (!question) throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
     const answers = await this.answerRepository.findByQuestionId(id);
+
+    const photos = await this.photoMapRepository.findByQuestionId(id);
+    const photoDto = photos.map((photo) =>
+      plainToInstance(
+        GetPhotoMappingAdminDto,
+        {
+          id: photo.id,
+          key: photo.key,
+          orderIndex: photo.orderIndex,
+          originalFileName: photo.originalName,
+        },
+        { excludeExtraneousValues: true },
+      ),
+    );
 
     switch (question.type) {
       case QuestionType.TRUE_FALSE:
@@ -202,6 +235,7 @@ export class AdminQuestionService {
             type: question.type,
             question: question.title,
             correctAnswer: answers[0].isCorrect,
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );
@@ -223,6 +257,7 @@ export class AdminQuestionService {
               id: answer.id,
               option: answer.content,
             })),
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );
@@ -252,6 +287,7 @@ export class AdminQuestionService {
                 id: answer.id,
                 option: answer.content,
               })),
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );
@@ -268,6 +304,7 @@ export class AdminQuestionService {
             createdAt: question.createdAt,
             type: question.type,
             question: question.title,
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );
@@ -284,6 +321,7 @@ export class AdminQuestionService {
             createdAt: question.createdAt,
             type: question.type,
             question: question.title,
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );
@@ -300,6 +338,7 @@ export class AdminQuestionService {
             createdAt: question.createdAt,
             type: question.type,
             question: question.title,
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );
@@ -317,6 +356,7 @@ export class AdminQuestionService {
             createdAt: question.createdAt,
             type: question.type,
             question: question.title,
+            photos: photoDto,
           },
           { excludeExtraneousValues: true },
         );

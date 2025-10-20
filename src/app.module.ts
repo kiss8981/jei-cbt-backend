@@ -11,6 +11,7 @@ import { AdminQuestionModule } from './admin/question/admin.question.module';
 import { AdminUnitModule } from './admin/unit/admin.unit.module';
 import { AppUnitModule } from './app/unit/app.unit.module';
 import { AppQuestionSessionModule } from './app/question/session/app.question-session.module';
+import { AdminUploadModule } from './admin/upload/admin.upload.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AppQuestionSessionModule } from './app/question/session/app.question-se
     AdminAuthModule,
     AdminQuestionModule,
     AdminUnitModule,
+    AdminUploadModule,
     AppAuthModule,
     AppUnitModule,
     AppQuestionSessionModule,

@@ -4,6 +4,7 @@ import { QuestionType } from 'src/common/constants/question-type.enum';
 import { Answer } from './answer.entity';
 import { Unit } from './unit.entity';
 import { QuestionSessionMap } from './question-session-map.entity';
+import { PhotoMap } from './photo-map.entity';
 
 @Entity()
 export class Question extends BaseEntity {
@@ -37,4 +38,7 @@ export class Question extends BaseEntity {
 
   @OneToMany(() => QuestionSessionMap, (qsm) => qsm.question)
   questionSessionMaps: QuestionSessionMap[];
+
+  @OneToMany(() => PhotoMap, (photoMap) => photoMap.question)
+  photoMaps: PhotoMap[];
 }
