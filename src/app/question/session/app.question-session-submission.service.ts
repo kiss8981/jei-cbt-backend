@@ -151,7 +151,7 @@ export class AppQuestionSessionSubmissionService {
               Number(correctOptionIds[0]) ==
                 Number(userAnswer.answersForMultipleChoice[0]),
             explanation: question.explanation,
-            answer: correctAnswers[0].content,
+            answer: correctAnswers.find((ans) => ans.isCorrect).content,
           };
         }
       case QuestionType.MATCHING:
