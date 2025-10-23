@@ -7,7 +7,9 @@ import {
   Put,
   Query,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AdminAuthGuard } from 'src/common/guards/admin-auth.guard';
 import { CreateQuestionAdminDto } from 'src/dtos/admin/question/create-question.admin.dto';
@@ -20,6 +22,8 @@ import {
 } from 'src/dtos/admin/upload/update-photo-mapping.admin.dto';
 import { AdminUploadService } from '../upload/admin.upload.service';
 import { PhotoMappingTypeEnum } from 'src/common/constants/photo-mapping-type.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 
 @Controller('/admin/questions')
 @UseGuards(AdminAuthGuard)
@@ -62,5 +66,11 @@ export class AdminQuestionController {
   @Post()
   async createQuestion(@Body() body: CreateQuestionAdminDto) {
     return this.adminQuestionService.create(body);
+  }
+
+  @Post('/excel')
+  @UseInterceptors(FileInterceptor('file'))
+  async createQuestionsFromExcel(@UploadedFile() file: Express.Multer.File) {
+    return this.adminQuestionService.createManyFromExcel(file.buffer);
   }
 }

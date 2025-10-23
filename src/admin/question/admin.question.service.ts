@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { plainToInstance } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 import { ErrorCodes } from 'src/common/constants/error-code.enum';
 import { QuestionType } from 'src/common/constants/question-type.enum';
 import { CustomHttpException } from 'src/common/filters/custom-http.exception';
-import { CreateQuestionAdminDto } from 'src/dtos/admin/question/create-question.admin.dto';
+import {
+  CreateQuestionAdminDto,
+  CreateQuestionMultipleChoiceAdminDto,
+} from 'src/dtos/admin/question/create-question.admin.dto';
 import { UpdateQuestionAdminDto } from 'src/dtos/admin/question/update-question.admin.dto';
 import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-question-list-query.admin.dto';
 import { GetQuestionListAdminDto } from 'src/dtos/admin/question/get-question-list.admin.dto';
@@ -29,7 +32,8 @@ import { UnitRepository } from 'src/repositories/unit.repository';
 import { EntityManager, Repository } from 'typeorm';
 import { AdminUploadService } from '../upload/admin.upload.service';
 import { PhotoMappingTypeEnum } from 'src/common/constants/photo-mapping-type.enum';
-
+import * as xlsx from 'xlsx';
+import { validate } from 'class-validator';
 @Injectable()
 export class AdminQuestionService {
   constructor(
@@ -500,5 +504,119 @@ export class AdminQuestionService {
       },
       entityManager,
     );
+  }
+  async createManyFromExcel(buffer: Buffer) {
+    const workbook = xlsx.read(buffer, { type: 'buffer' });
+    const sheets = workbook.SheetNames.filter(
+      (name) => name !== workbook.SheetNames[0],
+    );
+
+    const transformedData: CreateQuestionAdminDto[] = [];
+
+    for (const sheetName of sheets) {
+      const sheet = workbook.Sheets[sheetName]; // 첫 번째 시트 가져오기
+      const data = xlsx.utils.sheet_to_json(sheet, { defval: null });
+      data.map((row: any) => {
+        let base: CreateQuestionAdminDto = {
+          unitId: row['unitId'] as number,
+          type: row['type'] as QuestionType,
+          title: row['title'] as string,
+          explanation: row['explanation'] as string,
+          additionalText: row['additionalText'] as string,
+        };
+
+        switch (base.type) {
+          case QuestionType.TRUE_FALSE:
+            base.answersForCorrectAnswerForTrueFalse = row[
+              'answersForCorrectAnswerForTrueFalse'
+            ] as boolean;
+            break;
+          case QuestionType.MULTIPLE_CHOICE:
+            const choices: CreateQuestionMultipleChoiceAdminDto[] = [];
+            const items = (row['answersForMultipleChoice'] as string)
+              .replaceAll('\r', '')
+              .split('\n');
+            const corrects = (
+              row['answersForMultipleChoiceIsCorrect'] as string
+            )
+              .replaceAll('\r', '')
+              .split('\n')
+              .map((item) => item.toLowerCase() == 'true');
+            console.log('corrects:', corrects);
+            console.log('items:', items);
+
+            items.map((item, idx) => {
+              choices.push({
+                content: item,
+                isCorrect: corrects[idx],
+              });
+            });
+            base.answersForMultipleChoice = choices;
+            break;
+          case QuestionType.MATCHING:
+            const matchings: any[] = [];
+            const leftItems = (row['answersForMatchingLeftItem'] as string)
+              .replaceAll('\r', '')
+              .split('\n');
+            const rightItems = (row['answersForMatchingRightItem'] as string)
+              .replaceAll('\r', '')
+              .split('\n');
+
+            leftItems.map((leftItem, idx) => {
+              matchings.push({
+                leftItem: leftItem,
+                rightItem: rightItems[idx],
+              });
+            });
+            base.answersForMatching = matchings;
+            break;
+          case QuestionType.SHORT_ANSWER:
+            const shortAnswers = (row['answersForShortAnswer'] as string)
+              .replaceAll('\r', '')
+              .split('\n');
+            base.answersForShortAnswer = shortAnswers;
+            break;
+          case QuestionType.MULTIPLE_SHORT_ANSWER:
+            const multipleShortAnswers: any[] = [];
+            const orderIndexes = (
+              row['answersForMultipleShortAnswerOrderIndex'] as string
+            )
+              .replaceAll('\r', '')
+              .split('\n')
+              .map(Number);
+
+            const msaItems = (
+              row['answersForMultipleShortAnswerContent'] as string
+            )
+              .replaceAll('\r', '')
+              .split('\n');
+            msaItems.map((item, idx) => {
+              multipleShortAnswers.push({
+                content: item,
+                orderIndex: orderIndexes[idx],
+              });
+            });
+            base.answersForMultipleShortAnswer = multipleShortAnswers;
+            break;
+          case QuestionType.INTERVIEW:
+            base.answersForInterview = row['answersForInterview'] as string;
+            break;
+        }
+
+        transformedData.push(base);
+      });
+    }
+
+    const plainDtos = plainToInstance(CreateQuestionAdminDto, transformedData);
+
+    for await (const dto of plainDtos) {
+      try {
+        await this.create(dto);
+      } catch (error) {
+        console.error(
+          `Error creating question titled "${dto.title}": ${error.message}`,
+        );
+      }
+    }
   }
 }

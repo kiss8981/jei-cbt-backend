@@ -147,8 +147,9 @@ export class AppQuestionSessionSubmissionService {
         } else {
           return {
             isCorrect:
-              userAnswer.answersForMultipleChoice.length === 1 &&
-              correctOptionIds[0] === userAnswer.answersForMultipleChoice[0],
+              userAnswer.answersForMultipleChoice.length == 1 &&
+              Number(correctOptionIds[0]) ==
+                Number(userAnswer.answersForMultipleChoice[0]),
             explanation: question.explanation,
             answer: correctAnswers[0].content,
           };
