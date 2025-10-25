@@ -95,4 +95,26 @@ export class AppAuthController {
 
     return refreshTokenResponseDto;
   }
+
+  @Post('signout')
+  @UseGuards(AuthGuard)
+  async signout(
+    @Res({ passthrough: true }) res: Response,
+    @User() user: UserPayload,
+  ) {
+    await this.appAuthService.signOut(user.sub);
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      domain: process.env.DOMAIN,
+    });
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      domain: process.env.DOMAIN,
+    });
+    return true;
+  }
 }

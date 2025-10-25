@@ -22,4 +22,12 @@ export class UserRepository {
   findById(id: number) {
     return this.userRepository.findOne({ where: { id } });
   }
+
+  softDeleteById(id: number) {
+    return this.userRepository.softDelete(id);
+  }
+
+  deleteById(id: number) {
+    return this.userRepository.delete(id);
+  }
 }
