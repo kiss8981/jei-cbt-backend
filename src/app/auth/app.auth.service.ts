@@ -103,4 +103,12 @@ export class AppAuthService {
       secret: process.env.JWT_SECRET,
     });
   }
+
+  async signOut(userId: number) {
+    const user = await this.userRepository.findById(userId);
+
+    await this.userRepository.deleteById(user.id);
+
+    return true;
+  }
 }

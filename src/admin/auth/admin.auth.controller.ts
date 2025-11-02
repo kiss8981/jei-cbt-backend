@@ -1,7 +1,5 @@
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
-import { AuthGuard } from 'src/common/guards/auth.guard';
-import { User, UserPayload } from 'src/common/decorators/user.decorator';
 import { AdminAuthService } from './admin.auth.service';
 import { LoginUserAuthAdminDto } from 'src/dtos/admin/auth/login-user.auth.dto';
 import { RefreshTokenAuthAdminDto } from 'src/dtos/admin/auth/refresh-token.auth.dto';
