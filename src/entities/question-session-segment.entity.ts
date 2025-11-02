@@ -11,18 +11,11 @@ import { User } from './user.entity';
 import { QuestionSession } from './question-session.entity';
 
 @Entity()
-@Index(['userId', 'sessionId'])
+@Index(['sessionId'])
 @Index('ux_qss_one_open_per_session', ['sessionId', 'openFlag'], {
   unique: true,
 })
 export class QuestionSessionSegment extends BaseEntity {
-  @Column()
-  userId: number;
-
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
   @Column()
   sessionId: number;
 
@@ -35,6 +28,9 @@ export class QuestionSessionSegment extends BaseEntity {
 
   @Column('datetime', { precision: 3, nullable: true })
   endedAt: Date | null;
+
+  @Column('datetime', { precision: 3, nullable: true })
+  lastPingAt: Date | null;
 
   @Column({
     type: 'tinyint',

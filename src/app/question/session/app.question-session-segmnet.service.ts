@@ -5,36 +5,106 @@ import { QuestionSessionSegment } from 'src/entities/question-session-segment.en
 import { QuestionSessionRepository } from 'src/repositories/question-session.repository';
 import { ErrorCodes } from 'src/common/constants/error-code.enum';
 import { CustomHttpException } from 'src/common/filters/custom-http.exception';
+import { QuestionSessionSegmentRepository } from 'src/repositories/question-session-segment.repository';
+import { plainToInstance } from 'class-transformer';
+import { GetQuestionSessionElapsedMsAppDto } from 'src/dtos/app/question/get-question-session-elapsed-ms.app.dto';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class AppQuestionSessionSegmentService {
   constructor(
-    @InjectRepository(QuestionSessionSegment)
-    private readonly sessionSegmentRepo: Repository<QuestionSessionSegment>,
     private readonly sessionRepository: QuestionSessionRepository,
+    private readonly sessionSegmentRepository: QuestionSessionSegmentRepository,
   ) {}
 
-  private async ensureOwner(userId: number, sessionId: number) {
+  async start(
+    userId: number,
+    sessionId: number,
+  ): Promise<QuestionSessionSegment> {
     const session = await this.sessionRepository.findOneById(sessionId);
-
-    if (!session || session.userId != userId)
+    if (!session || session.userId != userId) {
       throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
 
-    return session;
+    const openSegment =
+      await this.sessionSegmentRepository.findOpenSegmentBySessionId(sessionId);
+
+    if (openSegment) {
+      await this.sessionSegmentRepository.stop(sessionId);
+    }
+
+    return this.sessionSegmentRepository.start(sessionId);
   }
 
-  async getDurationBySessionId(sessionId: number) {
-    const [{ durationMs = 0 } = {} as any] =
-      await this.sessionSegmentRepo.query(
-        `
-      SELECT
-        COALESCE(SUM(TIMESTAMPDIFF(MICROSECOND, startedAt, COALESCE(endedAt, NOW(3))) DIV 1000), 0) AS durationMs
-      FROM question_session_segment
-      WHERE sessionId = ?
-      `,
-        [sessionId],
-      );
+  async stop(
+    userId: number,
+    sessionId: number,
+  ): Promise<QuestionSessionSegment> {
+    const session = await this.sessionRepository.findOneById(sessionId);
+    if (!session || session.userId != userId) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
 
-    return Number(durationMs);
+    const stoppedSegment = await this.sessionSegmentRepository.stop(sessionId);
+
+    if (!stoppedSegment) {
+      throw new CustomHttpException(
+        ErrorCodes.QUESTION_SESSION_SEGMENT_NOT_FOUND,
+      );
+    }
+
+    return stoppedSegment;
+  }
+
+  async getElapsedMs(userId: number, sessionId: number) {
+    const session = await this.sessionRepository.findOneById(sessionId);
+    if (!session || session.userId != userId) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
+
+    const elapsedMs =
+      await this.sessionSegmentRepository.getElapsedMs(sessionId);
+
+    return plainToInstance(
+      GetQuestionSessionElapsedMsAppDto,
+      {
+        elapsedMs,
+        sessionId: Number(sessionId),
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
+  async pollSession(userId: number, sessionId: number) {
+    const session = await this.sessionRepository.findOneById(sessionId);
+    if (!session || session.userId != userId) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
+
+    let openSegment =
+      await this.sessionSegmentRepository.findOpenSegmentBySessionId(sessionId);
+
+    if (!openSegment) {
+      openSegment = await this.sessionSegmentRepository.start(sessionId);
+    }
+
+    await this.sessionSegmentRepository.updateLastPingAt(
+      openSegment.id,
+      new Date(),
+    );
+
+    return true;
+  }
+
+  @Cron('*/5 * * * * *')
+  async closeStaleSessions() {
+    const staleSegments =
+      await this.sessionSegmentRepository.getStoppedPingSegments();
+
+    for (const segment of staleSegments) {
+      await this.sessionSegmentRepository.stop(segment.sessionId);
+    }
   }
 }

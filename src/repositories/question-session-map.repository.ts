@@ -131,6 +131,14 @@ export class QuestionSessionMapRepository {
     return lastOpenedQuestion;
   }
 
+  async getQuestionIdsBySessionId(sessionId: number) {
+    const sessionMaps = await this.questionSessionMapRepository.find({
+      where: { questionSessionId: sessionId },
+      select: ['questionId'],
+    });
+    return sessionMaps.map((map) => map.questionId);
+  }
+
   async findById(id: number) {
     return this.questionSessionMapRepository.findOne({ where: { id } });
   }

@@ -17,6 +17,25 @@ export class QuestionRepository {
     });
   }
 
+  async findRandomByUnitIdsAndExcludeQuestionIds(
+    unitIds: number[],
+    excludeQuestionIds: number[],
+  ) {
+    const queryBuilder = this.questionRepository.createQueryBuilder('question');
+
+    queryBuilder.where('question.unitId IN (:...unitIds)', { unitIds });
+
+    if (excludeQuestionIds && excludeQuestionIds.length > 0) {
+      queryBuilder.andWhere('question.id NOT IN (:...excludeQuestionIds)', {
+        excludeQuestionIds,
+      });
+    }
+
+    queryBuilder.orderBy('RAND()').limit(1);
+
+    return queryBuilder.getOne();
+  }
+
   async findByUnitId(unitId: number) {
     return this.questionRepository.find({
       where: { unit: { id: unitId } },

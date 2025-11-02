@@ -24,4 +24,11 @@ export class QuestionSession extends BaseEntity {
 
   @Column({ nullable: true, comment: '세션과 연관된 참조 ID (예: unit ID)' })
   referenceId: number;
+
+  @Column({
+    type: 'json',
+    nullable: true,
+    comment: '세션과 연관된 참조 ID 목록 (예: 여러 unit ID들)',
+  })
+  referenceIds: number[];
 }

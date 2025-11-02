@@ -26,4 +26,11 @@ export class QuestionSessionRepository {
       where: { id },
     });
   }
+
+  async findLatestSessionByUserId(userId: number) {
+    return this.questionSessionRepository.findOne({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

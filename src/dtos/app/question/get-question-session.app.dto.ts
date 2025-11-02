@@ -7,6 +7,9 @@ export class GetQuestionSessionAppDto {
 
   @Expose()
   totalQuestions: number; // 총 문제 수
+
+  @Expose()
+  durationMs: number; // 총 진행 시간 (밀리초 단위)
 }
 
 export class GetUnitQuestionSessionAppDto extends GetQuestionSessionAppDto {
@@ -31,4 +34,7 @@ export class GetMockQuestionSessionAppDto extends GetQuestionSessionAppDto {
 export class GetAllQuestionSessionAppDto extends GetQuestionSessionAppDto {
   @Expose()
   type: SessionType.ALL;
+
+  @Expose()
+  lastQuestionMapId: number | null; // 사용자가 마지막으로 푼 문제의 ID (없을 경우 null)
 }

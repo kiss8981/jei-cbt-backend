@@ -13,6 +13,8 @@ import { User, UserPayload } from 'src/common/decorators/user.decorator';
 import { GetQuestionNextQueryAppDto } from 'src/dtos/app/question/get-question-next-query.app.dto';
 import { AppQuestionSessionSubmissionService } from './app.question-session-submission.service';
 import { SubmissionAnswerRequestAppDto } from 'src/dtos/app/question/submission-answer-request.app.dto';
+import { CreateQuestionSessionByAllAppDto } from 'src/dtos/app/question/create-question-session-by-all.app.dto';
+import { AppQuestionSessionSegmentService } from './app.question-session-segmnet.service';
 
 @Controller('questions/sessions')
 @UseGuards(AuthGuard)
@@ -20,7 +22,51 @@ export class AppQuestionSessionController {
   constructor(
     private readonly appQuestionSessionService: AppQuestionSessionService,
     private readonly appQuestionSessionSubmissionService: AppQuestionSessionSubmissionService,
+    private readonly appQuestionSessionSegmentService: AppQuestionSessionSegmentService,
   ) {}
+
+  @Post(':sessionId/start')
+  async startSession(
+    @Param('sessionId') sessionId: number,
+    @User() user: UserPayload,
+  ) {
+    return this.appQuestionSessionSegmentService.start(user.sub, sessionId);
+  }
+
+  @Post(':sessionId/stop')
+  async stopSession(
+    @Param('sessionId') sessionId: number,
+    @User() user: UserPayload,
+  ) {
+    return this.appQuestionSessionSegmentService.stop(user.sub, sessionId);
+  }
+
+  @Get(':sessionId/elapsed-ms')
+  async getElapsedMs(
+    @Param('sessionId') sessionId: number,
+    @User() user: UserPayload,
+  ) {
+    return this.appQuestionSessionSegmentService.getElapsedMs(
+      user.sub,
+      sessionId,
+    );
+  }
+
+  @Post(':sessionId/poll')
+  async pollSession(
+    @Param('sessionId') sessionId: number,
+    @User() user: UserPayload,
+  ) {
+    return this.appQuestionSessionSegmentService.pollSession(
+      user.sub,
+      sessionId,
+    );
+  }
+
+  @Get('latest')
+  async getLatestSession(@User() user: UserPayload) {
+    return this.appQuestionSessionService.getLatestSession(user.sub);
+  }
 
   @Get(':sessionId')
   async getSessionById(
@@ -90,6 +136,17 @@ export class AppQuestionSessionController {
     return this.appQuestionSessionService.createSessionByUnitId(
       user.sub,
       unitId,
+    );
+  }
+
+  @Post('by-all')
+  async createSessionByAll(
+    @User() user: UserPayload,
+    @Body() createAllSessionDto: CreateQuestionSessionByAllAppDto,
+  ) {
+    return this.appQuestionSessionService.createSessionByAll(
+      user.sub,
+      createAllSessionDto.unitIds,
     );
   }
 }

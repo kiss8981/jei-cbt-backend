@@ -31,6 +31,14 @@ export const ErrorCodes = {
     code: 4300,
     message: '존재하지 않는 세션입니다.',
   },
+  QUESTION_SESSION_SEGMENT_NOT_FOUND: {
+    code: 4301,
+    message: '존재하지 않는 세션 구간입니다.',
+  },
+  QUESTION_NEXT_NOT_FOUND: {
+    code: 4302,
+    message: '다음 문제가 존재하지 않습니다.',
+  },
 
   S3_FILE_GET_ERROR: {
     code: 5100,

@@ -12,6 +12,7 @@ import { AdminUnitModule } from './admin/unit/admin.unit.module';
 import { AppUnitModule } from './app/unit/app.unit.module';
 import { AppQuestionSessionModule } from './app/question/session/app.question-session.module';
 import { AdminUploadModule } from './admin/upload/admin.upload.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AdminUploadModule } from './admin/upload/admin.upload.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
+    ScheduleModule.forRoot(),
     AdminAuthModule,
     AdminQuestionModule,
     AdminUnitModule,

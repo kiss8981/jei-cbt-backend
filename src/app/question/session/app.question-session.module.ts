@@ -14,6 +14,9 @@ import { AppAuthModule } from 'src/app/auth/app.auth.module';
 import { AnswerRepository } from 'src/repositories/answer.repository';
 import { Answer } from 'src/entities/answer.entity';
 import { AppQuestionSessionSubmissionService } from './app.question-session-submission.service';
+import { AppQuestionSessionSegmentService } from './app.question-session-segmnet.service';
+import { QuestionSessionSegment } from 'src/entities/question-session-segment.entity';
+import { QuestionSessionSegmentRepository } from 'src/repositories/question-session-segment.repository';
 
 @Module({
   imports: [
@@ -24,17 +27,20 @@ import { AppQuestionSessionSubmissionService } from './app.question-session-subm
       Question,
       Unit,
       Answer,
+      QuestionSessionSegment,
     ]),
   ],
   controllers: [AppQuestionSessionController],
   providers: [
     AppQuestionSessionService,
     AppQuestionSessionSubmissionService,
+    AppQuestionSessionSegmentService,
     QuestionSessionRepository,
     QuestionSessionMapRepository,
     QuestionRepository,
     UnitRepository,
     AnswerRepository,
+    QuestionSessionSegmentRepository,
   ],
 })
 export class AppQuestionSessionModule {}

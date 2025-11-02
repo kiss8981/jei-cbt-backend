@@ -13,7 +13,10 @@ import {
   GetShortAnswerQuestionAppDto,
   GetTrueFalseQuestionAppDto,
 } from 'src/dtos/app/question/get-question.app.dto';
-import { GetUnitQuestionSessionAppDto } from 'src/dtos/app/question/get-question-session.app.dto';
+import {
+  GetAllQuestionSessionAppDto,
+  GetUnitQuestionSessionAppDto,
+} from 'src/dtos/app/question/get-question-session.app.dto';
 import { QuestionSession } from 'src/entities/question-session.entity';
 import { Question } from 'src/entities/question.entity';
 import { Unit } from 'src/entities/unit.entity';
@@ -24,12 +27,14 @@ import { QuestionRepository } from 'src/repositories/question.repository';
 import { UnitRepository } from 'src/repositories/unit.repository';
 import { EntityManager } from 'typeorm';
 import { GetQuestionWithStepAppDto } from 'src/dtos/app/question/get-question-with-step.app.dto';
+import { QuestionSessionSegmentRepository } from 'src/repositories/question-session-segment.repository';
 
 @Injectable()
 export class AppQuestionSessionService {
   constructor(
     private readonly questionSessionRepository: QuestionSessionRepository,
     private readonly questionSessionMapRepository: QuestionSessionMapRepository,
+    private readonly questionSessionSegmentRepository: QuestionSessionSegmentRepository,
     private readonly questionRepository: QuestionRepository,
     private readonly unitRepository: UnitRepository,
     private readonly answerRepository: AnswerRepository,
@@ -48,28 +53,60 @@ export class AppQuestionSessionService {
       throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
     }
 
-    switch (session.type) {
-      case SessionType.UNIT:
-        const { nextQuestion, hasMore, nextQuestionCount, totalQuestionCount } =
-          await this.questionSessionMapRepository.getNextQuestionBySessionId(
-            session.id,
-            currentQuestionMapId,
-          );
-        const question = await this.questionRepository.findById(
-          nextQuestion.questionId,
+    if (session.type === SessionType.UNIT) {
+      const { nextQuestion, hasMore, nextQuestionCount, totalQuestionCount } =
+        await this.questionSessionMapRepository.getNextQuestionBySessionId(
+          session.id,
+          currentQuestionMapId,
         );
 
-        const questionResponse = await this.questionResponseMapper(question);
+      if (!nextQuestion) {
+        throw new CustomHttpException(ErrorCodes.QUESTION_NEXT_NOT_FOUND);
+      }
 
-        return plainToInstance(GetQuestionWithStepAppDto, {
-          isLastQuestion: !hasMore,
-          previousQuestionCount: totalQuestionCount - nextQuestionCount - 1,
-          nextQuestionCount: hasMore ? nextQuestionCount : 0,
-          questionMapId: nextQuestion.id,
-          question: questionResponse,
-        });
-      default:
-        throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+      const question = await this.questionRepository.findById(
+        nextQuestion.questionId,
+      );
+
+      const questionResponse = await this.questionResponseMapper(question);
+
+      return plainToInstance(GetQuestionWithStepAppDto, {
+        isLastQuestion: !hasMore,
+        previousQuestionCount: totalQuestionCount - nextQuestionCount - 1,
+        nextQuestionCount: hasMore ? nextQuestionCount : 0,
+        questionMapId: nextQuestion.id,
+        question: questionResponse,
+      });
+    } else if (session.type === SessionType.ALL) {
+      const excludeQuestionIds =
+        await this.questionSessionMapRepository.getQuestionIdsBySessionId(
+          session.id,
+        );
+      const choiceQuestion =
+        await this.questionRepository.findRandomByUnitIdsAndExcludeQuestionIds(
+          session.referenceIds,
+          excludeQuestionIds,
+        );
+
+      const mapId = await this.questionSessionMapRepository.create({
+        questionSessionId: session.id,
+        questionId: choiceQuestion.id,
+        userId,
+      });
+
+      const question = await this.questionRepository.findById(
+        choiceQuestion.id,
+      );
+
+      const questionResponse = await this.questionResponseMapper(question);
+
+      return plainToInstance(GetQuestionWithStepAppDto, {
+        isLastQuestion: false,
+        questionMapId: mapId.id,
+        question: questionResponse,
+        previousQuestionCount: null,
+        nextQuestionCount: null,
+      });
     }
   }
 
@@ -84,31 +121,52 @@ export class AppQuestionSessionService {
       throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
     }
 
-    switch (session.type) {
-      case SessionType.UNIT:
-        const { previousQuestion, previousQuestionCount, totalQuestionCount } =
-          await this.questionSessionMapRepository.getPreviousQuestionBySessionId(
-            session.id,
-            currentQuestionMapId,
-          );
-        if (!previousQuestion) {
-          throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
-        }
-        const question = await this.questionRepository.findById(
-          previousQuestion.questionId,
+    if (session.type == SessionType.UNIT) {
+      const { previousQuestion, previousQuestionCount, totalQuestionCount } =
+        await this.questionSessionMapRepository.getPreviousQuestionBySessionId(
+          session.id,
+          currentQuestionMapId,
+        );
+      if (!previousQuestion) {
+        throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+      }
+      const question = await this.questionRepository.findById(
+        previousQuestion.questionId,
+      );
+
+      const questionResponse = await this.questionResponseMapper(question);
+
+      return plainToInstance(GetQuestionWithStepAppDto, {
+        isLastQuestion: false,
+        questionMapId: previousQuestion.id,
+        question: questionResponse,
+        previousQuestionCount: previousQuestionCount,
+        nextQuestionCount: totalQuestionCount - previousQuestionCount - 1,
+      });
+    } else if (session.type == SessionType.ALL) {
+      const { previousQuestion, previousQuestionCount, totalQuestionCount } =
+        await this.questionSessionMapRepository.getPreviousQuestionBySessionId(
+          session.id,
+          currentQuestionMapId,
         );
 
-        const questionResponse = await this.questionResponseMapper(question);
+      if (!previousQuestion) {
+        throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+      }
 
-        return plainToInstance(GetQuestionWithStepAppDto, {
-          isLastQuestion: false,
-          questionMapId: previousQuestion.id,
-          question: questionResponse,
-          previousQuestionCount: previousQuestionCount,
-          nextQuestionCount: totalQuestionCount - previousQuestionCount - 1,
-        });
-      default:
-        throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+      const question = await this.questionRepository.findById(
+        previousQuestion.questionId,
+      );
+
+      const questionResponse = await this.questionResponseMapper(question);
+
+      return plainToInstance(GetQuestionWithStepAppDto, {
+        isLastQuestion: false,
+        questionMapId: previousQuestion.id,
+        question: questionResponse,
+        previousQuestionCount: previousQuestionCount,
+        nextQuestionCount: totalQuestionCount - previousQuestionCount - 1,
+      });
     }
   }
 
@@ -146,6 +204,17 @@ export class AppQuestionSessionService {
     }
   }
 
+  async getLatestSession(userId: number) {
+    const session =
+      await this.questionSessionRepository.findLatestSessionByUserId(userId);
+
+    if (!session) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
+
+    return this.getSessionById(userId, session.id);
+  }
+
   async getSessionById(userId: number, sessionId: number) {
     const session = await this.questionSessionRepository.findOneById(sessionId);
 
@@ -161,6 +230,8 @@ export class AppQuestionSessionService {
         }
 
         return this.unitSessionResponseMapper(session, unit);
+      case SessionType.ALL:
+        return this.allQuestionSessionResponseMapper(session);
       default:
         throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
     }
@@ -211,16 +282,64 @@ export class AppQuestionSessionService {
     );
   }
 
+  async createSessionByAll(userId: number, unitIds: number[]) {
+    const session = await this.questionSessionRepository.create({
+      type: SessionType.ALL,
+      referenceIds: unitIds,
+      userId,
+    });
+
+    return plainToInstance(
+      GetUnitQuestionSessionAppDto,
+      {
+        id: session.id,
+        type: session.type,
+        totalQuestions: -1,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
+  private async allQuestionSessionResponseMapper(session: QuestionSession) {
+    const lastQuestionMap =
+      await this.questionSessionMapRepository.getLastOpenedQuestionBySessionId(
+        session.id,
+      );
+
+    const durationMs = await this.questionSessionSegmentRepository.getElapsedMs(
+      session.id,
+    );
+
+    return plainToInstance(
+      GetAllQuestionSessionAppDto,
+      {
+        id: session.id,
+        type: session.type,
+        lastQuestionMapId: lastQuestionMap?.id || null,
+        durationMs,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
   private async unitSessionResponseMapper(
     session: QuestionSession,
     unit: Unit,
   ) {
-    const lastQuestionMapId =
+    const lastQuestionMap =
       await this.questionSessionMapRepository.getLastOpenedQuestionBySessionId(
         session.id,
       );
     const totalQuestions =
       await this.questionSessionMapRepository.countBySessionId(session.id);
+
+    const durationMs = await this.questionSessionSegmentRepository.getElapsedMs(
+      session.id,
+    );
 
     return plainToInstance(
       GetUnitQuestionSessionAppDto,
@@ -230,7 +349,8 @@ export class AppQuestionSessionService {
         unitName: unit.name,
         type: session.type,
         totalQuestions,
-        lastQuestionMapId: lastQuestionMapId,
+        lastQuestionMapId: lastQuestionMap?.id || null,
+        durationMs,
       },
       {
         excludeExtraneousValues: true,
