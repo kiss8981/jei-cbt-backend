@@ -111,4 +111,14 @@ export class AppAuthService {
 
     return true;
   }
+
+  async resetPasswordVerifyPhone(phone: string) {
+    const user = await this.userRepository.findOneByPhone(phone);
+
+    if (!user) {
+      throw new CustomHttpException(ErrorCodes.USER_NOT_REGISTERED);
+    }
+
+    return true;
+  }
 }

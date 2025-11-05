@@ -117,4 +117,9 @@ export class AppAuthController {
     });
     return true;
   }
+
+  @Post('reset-password/verify')
+  async resetPasswordVerify(@Body('phone') phone: string) {
+    return this.appAuthService.resetPasswordVerifyPhone(phone);
+  }
 }

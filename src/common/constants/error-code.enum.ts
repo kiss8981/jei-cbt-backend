@@ -19,6 +19,10 @@ export const ErrorCodes = {
     code: 4004,
     message: '이미 가입된 전화번호입니다.',
   },
+  USER_NOT_REGISTERED: {
+    code: 4005,
+    message: '가입되지 않은 사용자입니다.',
+  },
   QUESTION_NOT_FOUND: {
     code: 4100,
     message: '존재하지 않는 문제입니다.',
