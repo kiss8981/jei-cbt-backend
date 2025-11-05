@@ -535,12 +535,14 @@ export class AdminQuestionService {
             const choices: CreateQuestionMultipleChoiceAdminDto[] = [];
             const items = (row['answersForMultipleChoice'] as string)
               .replaceAll('\r', '')
-              .split('\n');
+              .split('\n')
+              .filter((item) => item.trim() !== '');
             const corrects = (
               row['answersForMultipleChoiceIsCorrect'] as string
             )
               .replaceAll('\r', '')
               .split('\n')
+              .filter((item) => item.trim() !== '')
               .map((item) => item.toLowerCase() == 'true');
             console.log('corrects:', corrects);
             console.log('items:', items);
@@ -557,10 +559,12 @@ export class AdminQuestionService {
             const matchings: any[] = [];
             const leftItems = (row['answersForMatchingLeftItem'] as string)
               .replaceAll('\r', '')
-              .split('\n');
+              .split('\n')
+              .filter((item) => item.trim() !== '');
             const rightItems = (row['answersForMatchingRightItem'] as string)
               .replaceAll('\r', '')
-              .split('\n');
+              .split('\n')
+              .filter((item) => item.trim() !== '');
 
             leftItems.map((leftItem, idx) => {
               matchings.push({
@@ -573,7 +577,8 @@ export class AdminQuestionService {
           case QuestionType.SHORT_ANSWER:
             const shortAnswers = (row['answersForShortAnswer'] as string)
               .replaceAll('\r', '')
-              .split('\n');
+              .split('\n')
+              .filter((item) => item.trim() !== '');
             base.answersForShortAnswer = shortAnswers;
             break;
           case QuestionType.MULTIPLE_SHORT_ANSWER:
