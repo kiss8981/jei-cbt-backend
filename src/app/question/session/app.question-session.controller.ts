@@ -12,9 +12,9 @@ import { AuthGuard } from 'src/common/guards/auth.guard';
 import { User, UserPayload } from 'src/common/decorators/user.decorator';
 import { GetQuestionNextQueryAppDto } from 'src/dtos/app/question/get-question-next-query.app.dto';
 import { AppQuestionSessionSubmissionService } from './app.question-session-submission.service';
-import { SubmissionAnswerRequestAppDto } from 'src/dtos/app/question/submission-answer-request.app.dto';
 import { CreateQuestionSessionByAllAppDto } from 'src/dtos/app/question/create-question-session-by-all.app.dto';
 import { AppQuestionSessionSegmentService } from './app.question-session-segmnet.service';
+import { CreateQuestionSessionByMockAppDto } from 'src/dtos/app/question/create-question-session-by-mock.app.dto';
 
 @Controller('questions/sessions')
 @UseGuards(AuthGuard)
@@ -148,5 +148,13 @@ export class AppQuestionSessionController {
       user.sub,
       createAllSessionDto.unitIds,
     );
+  }
+
+  @Post(':by-mock')
+  async createSessionByMock(
+    @User() user: UserPayload,
+    @Body() body: CreateQuestionSessionByMockAppDto,
+  ) {
+    return this.appQuestionSessionService.createSessionByMock(user.sub, body);
   }
 }

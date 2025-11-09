@@ -29,6 +29,9 @@ export class GetUnitQuestionSessionAppDto extends GetQuestionSessionAppDto {
 export class GetMockQuestionSessionAppDto extends GetQuestionSessionAppDto {
   @Expose()
   type: SessionType.MOCK;
+
+  @Expose()
+  lastQuestionMapId: number | null; // 사용자가 마지막으로 푼 문제의 ID (없을 경우 null)
 }
 
 export class GetAllQuestionSessionAppDto extends GetQuestionSessionAppDto {

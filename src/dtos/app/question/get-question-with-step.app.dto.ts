@@ -1,5 +1,6 @@
 import { Expose } from 'class-transformer';
 import { GetQuestionAppDtoUnion } from './get-question.app.dto';
+import { SubmissionAnswerRequestAppDto } from './submission-answer-request.app.dto';
 
 export class GetQuestionWithStepAppDto {
   @Expose()
@@ -16,4 +17,15 @@ export class GetQuestionWithStepAppDto {
 
   @Expose()
   question: GetQuestionAppDtoUnion;
+
+  @Expose()
+  userAnswer: Pick<
+    SubmissionAnswerRequestAppDto,
+    | 'answersForInterview'
+    | 'answersForMultipleShortAnswer'
+    | 'answersForShortAnswer'
+    | 'answersForTrueFalse'
+    | 'answersForMultipleChoice'
+    | 'answersForMatching'
+  > | null;
 }

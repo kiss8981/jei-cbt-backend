@@ -7,3 +7,15 @@ export enum QuestionType {
   MULTIPLE_SHORT_ANSWER = 'MULTIPLE_SHORT_ANSWER', // 복수 단답형
   INTERVIEW = 'INTERVIEW', // 면접 질문
 }
+
+export const userAnswerKeyMapping: {
+  [key in QuestionType]: string;
+} = {
+  [QuestionType.TRUE_FALSE]: 'answersForTrueFalse',
+  [QuestionType.MULTIPLE_CHOICE]: 'answersForMultipleChoice',
+  [QuestionType.MATCHING]: 'answersForMatching',
+  [QuestionType.SHORT_ANSWER]: 'answersForShortAnswer',
+  [QuestionType.COMPLETION]: 'answerCompletion',
+  [QuestionType.MULTIPLE_SHORT_ANSWER]: 'answersForMultipleShortAnswer',
+  [QuestionType.INTERVIEW]: 'answersForInterview',
+};

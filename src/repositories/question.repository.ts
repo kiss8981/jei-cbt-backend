@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from 'src/entities/question.entity';
 
@@ -39,6 +39,12 @@ export class QuestionRepository {
   async findByUnitId(unitId: number) {
     return this.questionRepository.find({
       where: { unit: { id: unitId } },
+    });
+  }
+
+  async findByUnitIds(unitIds: number[]) {
+    return this.questionRepository.find({
+      where: { unit: { id: In(unitIds) } },
     });
   }
 
@@ -89,5 +95,11 @@ export class QuestionRepository {
 
     const [questions, total] = await queryBuilder.getManyAndCount();
     return [questions, total];
+  }
+
+  async countByUnitIds(unitIds: number[]): Promise<number> {
+    return this.questionRepository.count({
+      where: { unit: { id: In(unitIds) } },
+    });
   }
 }
