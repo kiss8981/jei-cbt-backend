@@ -12,4 +12,7 @@ export class CreateQuestionSessionByMockAppDto {
   @IsNumber({}, { each: true })
   @ValidateIf((o) => o.type === QuestionSessionByMockTypeEnum.UNIT)
   unitIds: number[];
+
+  @IsNumber()
+  count: number;
 }

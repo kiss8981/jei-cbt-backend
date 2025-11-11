@@ -381,11 +381,14 @@ export class AppQuestionSessionService {
         );
 
         await this.questionSessionMapRepository.createMany(
-          questions.map((question) => ({
-            questionSessionId: session.id,
-            questionId: question.id,
-            userId,
-          })),
+          questions
+            .sort(() => Math.random() - 0.5)
+            .slice(0, createQuestionSessionByMockDto.count)
+            .map((question) => ({
+              questionSessionId: session.id,
+              questionId: question.id,
+              userId,
+            })),
           transactionalEntityManager,
         );
 
