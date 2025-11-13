@@ -157,4 +157,12 @@ export class AppQuestionSessionController {
   ) {
     return this.appQuestionSessionService.createSessionByMock(user.sub, body);
   }
+
+  @Get(':sessionId/result')
+  async getSessionResult(
+    @Param('sessionId') sessionId: number,
+    @User() user: UserPayload,
+  ) {
+    return this.appQuestionSessionService.getSessionResult(user.sub, sessionId);
+  }
 }

@@ -34,6 +34,8 @@ import { GetQuestionWithStepAppDto } from 'src/dtos/app/question/get-question-wi
 import { QuestionSessionSegmentRepository } from 'src/repositories/question-session-segment.repository';
 import { CreateQuestionSessionByMockAppDto } from 'src/dtos/app/question/create-question-session-by-mock.app.dto';
 import { QuestionSessionMap } from 'src/entities/question-session-map.entity';
+import { GetQuestionSessionResultAppDto } from 'src/dtos/app/question/get-question-session-result.app.dto';
+import { AppQuestionSessionSubmissionService } from './app.question-session-submission.service';
 
 @Injectable()
 export class AppQuestionSessionService {
@@ -42,11 +44,71 @@ export class AppQuestionSessionService {
     private readonly questionSessionMapRepository: QuestionSessionMapRepository,
     private readonly questionSessionSegmentRepository: QuestionSessionSegmentRepository,
     private readonly questionRepository: QuestionRepository,
+    private readonly appQuestionSesstionSubmissionService: AppQuestionSessionSubmissionService,
     private readonly unitRepository: UnitRepository,
     private readonly answerRepository: AnswerRepository,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
   ) {}
+
+  async getSessionResult(
+    userId: number,
+    sessionId: number,
+  ): Promise<GetQuestionSessionResultAppDto> {
+    const session = await this.questionSessionRepository.findOneById(sessionId);
+
+    if (!session || session.userId != userId) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
+    }
+
+    const sessionMaps = await this.questionSessionMapRepository.findBySessionId(
+      session.id,
+    );
+
+    const questions = await this.questionRepository.findByIds(
+      sessionMaps.map((map) => map.questionId),
+    );
+
+    return plainToInstance(GetQuestionSessionResultAppDto, {
+      id: session.id,
+      totalQuestions: sessionMaps.length,
+      durationMs: await this.questionSessionSegmentRepository.getElapsedMs(
+        session.id,
+      ),
+      correctAnswers: sessionMaps.filter((map) => map.isCorrect).length,
+      results: await Promise.all(
+        sessionMaps.map(async (map) => {
+          const question = questions.find((q) => q.id == map.questionId);
+
+          if (!map.userAnswer) {
+            return {
+              title: question.title,
+              questionId: question.id,
+              isCorrect: null,
+              userAnswer: null,
+              correctAnswer: null,
+              explanation: null,
+            };
+          }
+
+          const { answer, explanation, userAnswerMapped } =
+            await this.appQuestionSesstionSubmissionService.getCorrectAnswerDetails(
+              question,
+              map.userAnswer,
+            );
+
+          return {
+            title: question.title,
+            questionId: question.id,
+            isCorrect: map.isCorrect,
+            userAnswer: userAnswerMapped,
+            correctAnswer: answer,
+            explanation,
+          };
+        }),
+      ),
+    });
+  }
 
   async getNextQuestion(
     userId: number,

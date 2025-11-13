@@ -146,4 +146,10 @@ export class QuestionSessionMapRepository {
   async updateById(id: number, updateData: Partial<QuestionSessionMap>) {
     return this.questionSessionMapRepository.update({ id }, updateData);
   }
+
+  async findBySessionId(sessionId: number) {
+    return this.questionSessionMapRepository.find({
+      where: { questionSessionId: sessionId },
+    });
+  }
 }

@@ -17,6 +17,12 @@ export class QuestionRepository {
     });
   }
 
+  async findByIds(ids: number[]) {
+    return this.questionRepository.find({
+      where: { id: In(ids) },
+    });
+  }
+
   async findRandomByUnitIdsAndExcludeQuestionIds(
     unitIds: number[],
     excludeQuestionIds: number[],
