@@ -13,10 +13,12 @@ import { QuestionSessionMapRepository } from 'src/repositories/question-session-
 import { QuestionSessionRepository } from 'src/repositories/question-session.repository';
 import { QuestionRepository } from 'src/repositories/question.repository';
 import { collectMessages } from 'src/utils/validation';
+import { AppQuestionWrongService } from '../wrong/app.question-wrong.service';
 
 @Injectable()
 export class AppQuestionSessionSubmissionService {
   constructor(
+    private readonly appQuestionWrongService: AppQuestionWrongService,
     private readonly questionSessionMapRepository: QuestionSessionMapRepository,
     private readonly questionSessionRepository: QuestionSessionRepository,
     private readonly questionRepository: QuestionRepository,
@@ -72,6 +74,10 @@ export class AppQuestionSessionSubmissionService {
       isCorrect: isCorrect,
       answeredAt: new Date(),
     });
+
+    if (!isCorrect) {
+      await this.appQuestionWrongService.addWrongQuestion(userId, question.id);
+    }
 
     switch (session.type) {
       case SessionType.UNIT:

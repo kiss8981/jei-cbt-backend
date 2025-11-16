@@ -5,6 +5,7 @@ import { Answer } from './answer.entity';
 import { Unit } from './unit.entity';
 import { QuestionSessionMap } from './question-session-map.entity';
 import { PhotoMap } from './photo-map.entity';
+import { QuestionWrong } from './question-wrong.entity';
 
 @Entity()
 export class Question extends BaseEntity {
@@ -41,4 +42,7 @@ export class Question extends BaseEntity {
 
   @OneToMany(() => PhotoMap, (photoMap) => photoMap.question)
   photoMaps: PhotoMap[];
+
+  @OneToMany(() => QuestionWrong, (questionWrong) => questionWrong.question)
+  questionWrongs: QuestionWrong[];
 }

@@ -36,6 +36,7 @@ import { CreateQuestionSessionByMockAppDto } from 'src/dtos/app/question/create-
 import { QuestionSessionMap } from 'src/entities/question-session-map.entity';
 import { GetQuestionSessionResultAppDto } from 'src/dtos/app/question/get-question-session-result.app.dto';
 import { AppQuestionSessionSubmissionService } from './app.question-session-submission.service';
+import { AppQuestionService } from '../app.question.service';
 
 @Injectable()
 export class AppQuestionSessionService {
@@ -46,7 +47,7 @@ export class AppQuestionSessionService {
     private readonly questionRepository: QuestionRepository,
     private readonly appQuestionSesstionSubmissionService: AppQuestionSessionSubmissionService,
     private readonly unitRepository: UnitRepository,
-    private readonly answerRepository: AnswerRepository,
+    private readonly appQuestionService: AppQuestionService,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
   ) {}
@@ -132,11 +133,9 @@ export class AppQuestionSessionService {
         throw new CustomHttpException(ErrorCodes.QUESTION_NEXT_NOT_FOUND);
       }
 
-      const question = await this.questionRepository.findById(
+      const questionResponse = await this.appQuestionService.getQuestionById(
         nextQuestion.questionId,
       );
-
-      const questionResponse = await this.questionResponseMapper(question);
 
       return plainToInstance(GetQuestionWithStepAppDto, {
         isLastQuestion: !hasMore,
@@ -162,11 +161,9 @@ export class AppQuestionSessionService {
         userId,
       });
 
-      const question = await this.questionRepository.findById(
+      const questionResponse = await this.appQuestionService.getQuestionById(
         choiceQuestion.id,
       );
-
-      const questionResponse = await this.questionResponseMapper(question);
 
       return plainToInstance(GetQuestionWithStepAppDto, {
         isLastQuestion: false,
@@ -190,7 +187,9 @@ export class AppQuestionSessionService {
         nextQuestion.questionId,
       );
 
-      const questionResponse = await this.questionResponseMapper(question);
+      const questionResponse = await this.appQuestionService.getQuestionById(
+        nextQuestion.questionId,
+      );
 
       return plainToInstance(GetQuestionWithStepAppDto, {
         isLastQuestion: !hasMore,
@@ -229,7 +228,9 @@ export class AppQuestionSessionService {
         previousQuestion.questionId,
       );
 
-      const questionResponse = await this.questionResponseMapper(question);
+      const questionResponse = await this.appQuestionService.getQuestionById(
+        previousQuestion.questionId,
+      );
 
       return plainToInstance(GetQuestionWithStepAppDto, {
         isLastQuestion: false,
@@ -253,7 +254,9 @@ export class AppQuestionSessionService {
         previousQuestion.questionId,
       );
 
-      const questionResponse = await this.questionResponseMapper(question);
+      const questionResponse = await this.appQuestionService.getQuestionById(
+        previousQuestion.questionId,
+      );
 
       return plainToInstance(GetQuestionWithStepAppDto, {
         isLastQuestion: false,
@@ -275,7 +278,9 @@ export class AppQuestionSessionService {
         previousQuestion.questionId,
       );
 
-      const questionResponse = await this.questionResponseMapper(question);
+      const questionResponse = await this.appQuestionService.getQuestionById(
+        previousQuestion.questionId,
+      );
 
       return plainToInstance(GetQuestionWithStepAppDto, {
         isLastQuestion: false,
@@ -309,7 +314,9 @@ export class AppQuestionSessionService {
           currentQuestionMap.questionId,
         );
 
-        const questionResponse = await this.questionResponseMapper(question);
+        const questionResponse = await this.appQuestionService.getQuestionById(
+          currentQuestionMap.questionId,
+        );
 
         return plainToInstance(GetQuestionWithStepAppDto, {
           isLastQuestion: false,
@@ -553,137 +560,5 @@ export class AppQuestionSessionService {
         excludeExtraneousValues: true,
       },
     );
-  }
-
-  private async questionResponseMapper(question: Question) {
-    if (!question) throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
-    const answers = await this.answerRepository.findByQuestionId(question.id);
-
-    switch (question.type) {
-      case QuestionType.TRUE_FALSE:
-        return plainToInstance(
-          GetTrueFalseQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            createdAt: question.createdAt,
-            type: question.type,
-            question: question.title,
-          },
-          { excludeExtraneousValues: true },
-        );
-      case QuestionType.MULTIPLE_CHOICE:
-        return plainToInstance(
-          GetMultipleChoiceQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            createdAt: question.createdAt,
-            isMultipleAnswer: answers.filter((a) => a.isCorrect).length > 1,
-            type: question.type,
-            question: question.title,
-            choices: answers.map((answer) => ({
-              id: answer.id,
-              option: answer.content,
-            })),
-          },
-          { excludeExtraneousValues: true },
-        );
-      case QuestionType.MATCHING:
-        return plainToInstance(
-          GetMatchingQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            createdAt: question.createdAt,
-            type: question.type,
-            leftItems: answers
-              .filter((answer) => !answer.pairingAnswerId)
-              .sort(() => Math.random() - 0.5)
-              .map((answer) => ({
-                id: answer.id,
-                option: answer.content,
-              })),
-            rightItems: answers
-              .filter((answer) => answer.pairingAnswerId)
-              .sort(() => Math.random() - 0.5)
-              .map((answer) => ({
-                id: answer.id,
-                option: answer.content,
-              })),
-          },
-          { excludeExtraneousValues: true },
-        );
-      case QuestionType.SHORT_ANSWER:
-        return plainToInstance(
-          GetShortAnswerQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            type: question.type,
-            question: question.title,
-          },
-          { excludeExtraneousValues: true },
-        );
-      case QuestionType.COMPLETION:
-        return plainToInstance(
-          GetCompletionQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            type: question.type,
-            question: question.title,
-          },
-          { excludeExtraneousValues: true },
-        );
-      case QuestionType.MULTIPLE_SHORT_ANSWER:
-        return plainToInstance(
-          GetMultipleChoiceQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            createdAt: question.createdAt,
-            type: question.type,
-            question: question.title,
-          },
-          { excludeExtraneousValues: true },
-        );
-
-      case QuestionType.INTERVIEW:
-        return plainToInstance(
-          GetInterviewQuestionAppDto,
-          {
-            id: question.id,
-            title: question.title,
-            additionalText: question.additionalText,
-            unitId: question.unitId,
-            unitName: question.unit.name,
-            createdAt: question.createdAt,
-            type: question.type,
-            question: question.title,
-          },
-          { excludeExtraneousValues: true },
-        );
-      default:
-        break;
-    }
   }
 }

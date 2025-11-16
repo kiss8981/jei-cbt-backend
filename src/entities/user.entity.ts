@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { QuestionSession } from './question-session.entity';
+import { QuestionWrong } from './question-wrong.entity';
 
 @Entity()
 export class User extends BaseEntity {
@@ -13,6 +14,9 @@ export class User extends BaseEntity {
   @Column()
   password: string;
 
-  @ManyToOne(() => QuestionSession, (questionSession) => questionSession.user)
+  @OneToMany(() => QuestionSession, (questionSession) => questionSession.user)
   questionSessions: QuestionSession[];
+
+  @OneToMany(() => QuestionWrong, (questionWrong) => questionWrong.user)
+  questionWrongs: QuestionWrong[];
 }

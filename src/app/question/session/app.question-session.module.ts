@@ -17,10 +17,14 @@ import { AppQuestionSessionSubmissionService } from './app.question-session-subm
 import { AppQuestionSessionSegmentService } from './app.question-session-segmnet.service';
 import { QuestionSessionSegment } from 'src/entities/question-session-segment.entity';
 import { QuestionSessionSegmentRepository } from 'src/repositories/question-session-segment.repository';
+import { AppQuestionModule } from '../app.question.module';
+import { AppQuestionWrongModule } from '../wrong/app.question-wrong.module';
 
 @Module({
   imports: [
     AppAuthModule,
+    AppQuestionModule,
+    AppQuestionWrongModule,
     TypeOrmModule.forFeature([
       QuestionSession,
       QuestionSessionMap,

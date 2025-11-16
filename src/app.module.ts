@@ -13,6 +13,7 @@ import { AppUnitModule } from './app/unit/app.unit.module';
 import { AppQuestionSessionModule } from './app/question/session/app.question-session.module';
 import { AdminUploadModule } from './admin/upload/admin.upload.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppQuestionWrongModule } from './app/question/wrong/app.question-wrong.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AppAuthModule,
     AppUnitModule,
     AppQuestionSessionModule,
+    AppQuestionWrongModule,
   ],
   controllers: [AppController],
   providers: [AppService],

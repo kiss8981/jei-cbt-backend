@@ -19,7 +19,7 @@ export class QuestionSession extends BaseEntity {
   })
   type: SessionType;
 
-  @ManyToOne(() => QuestionSessionMap, (qsm) => qsm.questionSession)
+  @OneToMany(() => QuestionSessionMap, (qsm) => qsm.questionSession)
   questionSessionMaps: QuestionSessionMap[];
 
   @Column({ nullable: true, comment: '세션과 연관된 참조 ID (예: unit ID)' })
