@@ -365,11 +365,19 @@ export class AppQuestionSessionService {
     }
   }
 
-  async createSessionByUnitId(userId: number, unitId: number) {
+  async createSessionByUnitId(
+    userId: number,
+    unitId: number,
+    questionTypes: QuestionType[],
+  ) {
     const unit = await this.unitRepository.findOneById(unitId);
     if (!unit) throw new CustomHttpException(ErrorCodes.UNIT_NOT_FOUND);
 
-    const questions = await this.questionRepository.findByUnitId(unitId);
+    const questions =
+      await this.questionRepository.findByUnitIdAndQuestionTypes(
+        unitId,
+        questionTypes,
+      );
 
     const session = await this.entityManager.transaction(
       async (transactionalEntityManager) => {
@@ -383,11 +391,13 @@ export class AppQuestionSessionService {
         );
 
         await this.questionSessionMapRepository.createMany(
-          questions.map((question) => ({
-            questionSessionId: session.id,
-            questionId: question.id,
-            userId,
-          })),
+          questions
+            .sort(() => Math.random() - 0.5)
+            .map((question) => ({
+              questionSessionId: session.id,
+              questionId: question.id,
+              userId,
+            })),
           transactionalEntityManager,
         );
 

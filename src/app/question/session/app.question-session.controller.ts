@@ -15,6 +15,7 @@ import { AppQuestionSessionSubmissionService } from './app.question-session-subm
 import { CreateQuestionSessionByAllAppDto } from 'src/dtos/app/question/create-question-session-by-all.app.dto';
 import { AppQuestionSessionSegmentService } from './app.question-session-segmnet.service';
 import { CreateQuestionSessionByMockAppDto } from 'src/dtos/app/question/create-question-session-by-mock.app.dto';
+import { QuestionType } from 'src/common/constants/question-type.enum';
 
 @Controller('questions/sessions')
 @UseGuards(AuthGuard)
@@ -131,11 +132,16 @@ export class AppQuestionSessionController {
   @Post('by-unit/:unitId')
   async createSessionByUnitId(
     @Param('unitId') unitId: number,
+    @Query('questionTypes') questionTypes: string,
     @User() user: UserPayload,
   ) {
+    const types = questionTypes
+      .split(',')
+      .map((type) => type.trim()) as QuestionType[];
     return this.appQuestionSessionService.createSessionByUnitId(
       user.sub,
       unitId,
+      types,
     );
   }
 

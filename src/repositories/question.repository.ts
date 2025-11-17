@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from 'src/entities/question.entity';
+import { QuestionType } from 'src/common/constants/question-type.enum';
 
 @Injectable()
 export class QuestionRepository {
@@ -45,6 +46,15 @@ export class QuestionRepository {
   async findByUnitId(unitId: number) {
     return this.questionRepository.find({
       where: { unit: { id: unitId } },
+    });
+  }
+
+  async findByUnitIdAndQuestionTypes(
+    unitId: number,
+    questionTypes: QuestionType[],
+  ) {
+    return this.questionRepository.find({
+      where: { unit: { id: unitId }, type: In(questionTypes) },
     });
   }
 
