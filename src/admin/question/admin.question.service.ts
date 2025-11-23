@@ -515,111 +515,125 @@ export class AdminQuestionService {
 
     for (const sheetName of sheets) {
       const sheet = workbook.Sheets[sheetName]; // 첫 번째 시트 가져오기
-      const data = xlsx.utils.sheet_to_json(sheet, { defval: null });
+      const data = xlsx.utils.sheet_to_json(sheet, {
+        defval: null,
+        raw: false,
+      });
       data.map((row: any) => {
-        let base: CreateQuestionAdminDto = {
-          unitId: row['unitId'] as number,
-          type: row['type'] as QuestionType,
-          title: row['title'] as string,
-          explanation: row['explanation'] as string,
-          additionalText: row['additionalText'] as string,
-        };
+        try {
+          let base: CreateQuestionAdminDto = {
+            unitId: row['unitId'] as number,
+            type: row['type'].trim() as QuestionType,
+            title: row['title'] as string,
+            explanation: row['explanation'] as string,
+            additionalText: row['additionalText'] as string,
+          };
 
-        switch (base.type) {
-          case QuestionType.TRUE_FALSE:
-            base.answersForCorrectAnswerForTrueFalse = row[
-              'answersForCorrectAnswerForTrueFalse'
-            ] as boolean;
-            break;
-          case QuestionType.MULTIPLE_CHOICE:
-            const choices: CreateQuestionMultipleChoiceAdminDto[] = [];
-            const items = (row['answersForMultipleChoice'] as string)
-              .replaceAll('\r', '')
-              .split('\n')
-              .filter((item) => item.trim() !== '');
-            const corrects = (
-              row['answersForMultipleChoiceIsCorrect'] as string
-            )
-              .replaceAll('\r', '')
-              .split('\n')
-              .filter((item) => item.trim() !== '')
-              .map((item) => item.toLowerCase() == 'true');
-            console.log('corrects:', corrects);
-            console.log('items:', items);
+          switch (base.type) {
+            case QuestionType.TRUE_FALSE:
+              base.answersForCorrectAnswerForTrueFalse =
+                row['answersForCorrectAnswerForTrueFalse']
+                  .toString()
+                  .toLowerCase() == 'true';
+              break;
+            case QuestionType.MULTIPLE_CHOICE:
+              const choices: CreateQuestionMultipleChoiceAdminDto[] = [];
+              const items = (row['answersForMultipleChoice'] as string)
+                .replaceAll('\r', '')
+                .split('\n')
+                .filter((item) => item.trim() !== '');
+              const corrects = (
+                row['answersForMultipleChoiceIsCorrect'] as string
+              )
+                .replaceAll('\r', '')
+                .split('\n')
+                .filter((item) => item.trim() !== '')
+                .map((item) => item.toLowerCase() == 'true');
 
-            items.map((item, idx) => {
-              choices.push({
-                content: item,
-                isCorrect: corrects[idx],
+              items.map((item, idx) => {
+                choices.push({
+                  content: item.trim(),
+                  isCorrect: corrects[idx],
+                });
               });
-            });
-            base.answersForMultipleChoice = choices;
-            break;
-          case QuestionType.MATCHING:
-            const matchings: any[] = [];
-            const leftItems = (row['answersForMatchingLeftItem'] as string)
-              .replaceAll('\r', '')
-              .split('\n')
-              .filter((item) => item.trim() !== '');
-            const rightItems = (row['answersForMatchingRightItem'] as string)
-              .replaceAll('\r', '')
-              .split('\n')
-              .filter((item) => item.trim() !== '');
+              base.answersForMultipleChoice = choices;
+              break;
+            case QuestionType.MATCHING:
+              const matchings: any[] = [];
+              const leftItems = (row['answersForMatchingLeftItem'] as string)
+                .replaceAll('\r', '')
+                .split('\n')
+                .filter((item) => item.trim() !== '');
+              const rightItems = (row['answersForMatchingRightItem'] as string)
+                .replaceAll('\r', '')
+                .split('\n')
+                .filter((item) => item.trim() !== '');
 
-            leftItems.map((leftItem, idx) => {
-              matchings.push({
-                leftItem: leftItem,
-                rightItem: rightItems[idx],
+              leftItems.map((leftItem, idx) => {
+                matchings.push({
+                  leftItem: leftItem.trim(),
+                  rightItem: rightItems[idx].trim(),
+                });
               });
-            });
-            base.answersForMatching = matchings;
-            break;
-          case QuestionType.SHORT_ANSWER:
-            const shortAnswers = (row['answersForShortAnswer'] as string)
-              .replaceAll('\r', '')
-              .split('\n')
-              .filter((item) => item.trim() !== '');
-            base.answersForShortAnswer = shortAnswers;
-            break;
-          case QuestionType.MULTIPLE_SHORT_ANSWER:
-            const multipleShortAnswers: any[] = [];
-            const orderIndexes = (
-              row['answersForMultipleShortAnswerOrderIndex'] as string
-            )
-              .replaceAll('\r', '')
-              .split('\n')
-              .map(Number);
+              base.answersForMatching = matchings;
+              break;
+            case QuestionType.SHORT_ANSWER:
+              const shortAnswers = (row['answersForShortAnswer'] as string)
+                .replaceAll('\r', '')
+                .split('\n')
+                .filter((item) => item.trim() !== '');
+              base.answersForShortAnswer = shortAnswers;
+              break;
+            case QuestionType.MULTIPLE_SHORT_ANSWER:
+              const multipleShortAnswers: any[] = [];
+              const orderIndexes = (
+                row['answersForMultipleShortAnswerOrderIndex'] as string
+              )
+                .replaceAll('\r', '')
+                .split('\n')
+                .map(Number);
 
-            const msaItems = (
-              row['answersForMultipleShortAnswerContent'] as string
-            )
-              .replaceAll('\r', '')
-              .split('\n');
-            msaItems.map((item, idx) => {
-              multipleShortAnswers.push({
-                content: item,
-                orderIndex: orderIndexes[idx],
+              const msaItems = (
+                row['answersForMultipleShortAnswerContent'] as string
+              )
+                .replaceAll('\r', '')
+                .split('\n');
+              msaItems.map((item, idx) => {
+                multipleShortAnswers.push({
+                  content: item.trim(),
+                  orderIndex: orderIndexes[idx],
+                });
               });
-            });
-            base.answersForMultipleShortAnswer = multipleShortAnswers;
-            break;
-          case QuestionType.INTERVIEW:
-            base.answersForInterview = row['answersForInterview'] as string;
-            break;
+              base.answersForMultipleShortAnswer = multipleShortAnswers;
+              break;
+            case QuestionType.INTERVIEW:
+              base.answersForInterview = row['answersForInterview'] as string;
+              break;
+          }
+
+          transformedData.push(base);
+        } catch (error) {
+          throw new Error(
+            `Error processing row with title "${row['title']}": ${error.message}`,
+          );
         }
-
-        transformedData.push(base);
       });
     }
 
     const plainDtos = plainToInstance(CreateQuestionAdminDto, transformedData);
+    // QuestionType.MATCHING
+    // QuestionType.MULTIPLE_SHORT_ANSWER
+    // QuestionType.MULTIPLE_SHORT_ANSWER
+    // QuestionType.MULTIPLE_CHOICE
+    // QuestionType.TRUE_FALSE
 
     for await (const dto of plainDtos) {
       try {
+        // console.log(`Creating question titled "${dto.type} - ${dto.title}"...`);
         await this.create(dto);
       } catch (error) {
         console.error(
-          `Error creating question titled "${dto.title}": ${error.message}`,
+          `Error creating question titled "${dto.type} - ${dto.title}": ${error.message}`,
         );
       }
     }

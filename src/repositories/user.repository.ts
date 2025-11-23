@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 @Injectable()
 export class UserRepository {
@@ -12,6 +12,14 @@ export class UserRepository {
 
   findOneByPhone(phone: string) {
     return this.userRepository.findOne({ where: { phone } });
+  }
+
+  findByIds(ids: number[]) {
+    return this.userRepository.find({
+      where: {
+        id: In(ids),
+      },
+    });
   }
 
   create(user: Partial<User>) {

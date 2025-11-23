@@ -70,6 +70,94 @@ export class QuestionSessionSegmentRepository {
     return Number(durationMs);
   }
 
+  async getElapsedMsByIds(sessionIds: number[]) {
+    if (sessionIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.questionSessionSegmentRepository.query<
+      {
+        sessionId: number;
+        durationMs: number;
+      }[]
+    >(
+      `
+      SELECT
+        sessionId,
+        FLOOR(COALESCE(SUM(
+          TIMESTAMPDIFF(MICROSECOND, startedAt, COALESCE(endedAt, n.now3))
+        ), 0) / 1000) AS durationMs
+      FROM question_session_segment
+      CROSS JOIN (SELECT NOW(3) AS now3) AS n
+      WHERE sessionId IN (?)
+      GROUP BY sessionId
+      `,
+      [sessionIds],
+    );
+
+    return rows;
+  }
+
+  // 유저별 최근 학습 시간 7일, 30일, 당일
+  async getElapsedMsByUserIds(userIds: number[]) {
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.questionSessionSegmentRepository.query<
+      {
+        userId: number;
+        durationMs7Days: number;
+        durationMs30Days: number;
+        durationMsToday: number;
+        durationMsTotal: number;
+      }[]
+    >(
+      `
+      SELECT
+        qs.userId AS userId,
+        FLOOR(COALESCE(SUM(
+          CASE
+            -- 7일 (7 days ago to now)
+            WHEN qss.startedAt >= DATE_SUB(n.now, INTERVAL 7 DAY) THEN TIMESTAMPDIFF(MICROSECOND, qss.startedAt, COALESCE(qss.endedAt, n.now))
+            ELSE 0
+          END
+        ), 0) / 1000) AS durationMs7Days,
+
+        FLOOR(COALESCE(SUM(
+          CASE
+            -- 30일 (30 days ago to now)
+            WHEN qss.startedAt >= DATE_SUB(n.now, INTERVAL 30 DAY) THEN TIMESTAMPDIFF(MICROSECOND, qss.startedAt, COALESCE(qss.endedAt, n.now))
+            ELSE 0
+          END
+        ), 0) / 1000) AS durationMs30Days,
+
+        FLOOR(COALESCE(SUM(
+          CASE
+            -- 당일 (midnight today to now)
+            WHEN qss.startedAt >= DATE(n.now) THEN TIMESTAMPDIFF(MICROSECOND, qss.startedAt, COALESCE(qss.endedAt, n.now))
+            ELSE 0
+          END
+        ), 0) / 1000) AS durationMsToday,
+
+        FLOOR(COALESCE(SUM(
+          TIMESTAMPDIFF(MICROSECOND, qss.startedAt, COALESCE(qss.endedAt, n.now))
+        ), 0) / 1000) AS durationMsTotal
+      FROM question_session_segment AS qss
+      INNER JOIN question_session AS qs ON qs.id = qss.sessionId
+      -- Use NOW() for the current timestamp once
+      CROSS JOIN (SELECT NOW() AS now) AS n
+      WHERE qs.userId IN (?)
+        -- Optimize: Only query data relevant to the largest window (30 days)
+        AND qss.startedAt >= DATE_SUB(n.now, INTERVAL 30 DAY)
+      GROUP BY qs.userId
+    `,
+      [userIds],
+    );
+
+    return rows;
+  }
+
   async getStoppedPingSegments() {
     const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
 

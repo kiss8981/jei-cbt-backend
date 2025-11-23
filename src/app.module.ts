@@ -14,6 +14,7 @@ import { AppQuestionSessionModule } from './app/question/session/app.question-se
 import { AdminUploadModule } from './admin/upload/admin.upload.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppQuestionWrongModule } from './app/question/wrong/app.question-wrong.module';
+import { AdminQuestionSessionModule } from './admin/question/session/admin.question-session.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AppQuestionWrongModule } from './app/question/wrong/app.question-wrong.
     }),
     ScheduleModule.forRoot(),
     AdminAuthModule,
+    AdminQuestionSessionModule,
     AdminQuestionModule,
     AdminUnitModule,
     AdminUploadModule,
