@@ -78,7 +78,7 @@ export class AdminQuestionSessionService {
               userId: user.id,
               userName: user.name,
               createdAt: session.createdAt,
-              elapsedMs: elapsedMsSession.durationMs,
+              elapsedMs: elapsedMsSession ? elapsedMsSession.durationMs : 0,
               elapsedMs7d: elapsedMsUser ? elapsedMsUser.durationMs7Days : 0,
               elapsedMs30d: elapsedMsUser ? elapsedMsUser.durationMs30Days : 0,
               elapsedMsToday: elapsedMsUser ? elapsedMsUser.durationMsToday : 0,
