@@ -141,6 +141,7 @@ export class AppQuestionSessionService {
         isLastQuestion: !hasMore,
         previousQuestionCount: totalQuestionCount - nextQuestionCount - 1,
         nextQuestionCount: hasMore ? nextQuestionCount : 0,
+        totalQuestionCount,
         questionMapId: nextQuestion.id,
         question: questionResponse,
       });
@@ -195,6 +196,7 @@ export class AppQuestionSessionService {
         isLastQuestion: !hasMore,
         previousQuestionCount: totalQuestionCount - nextQuestionCount - 1,
         nextQuestionCount: hasMore ? nextQuestionCount : 0,
+        totalQuestionCount,
         questionMapId: nextQuestion.id,
         question: questionResponse,
         userAnswer:

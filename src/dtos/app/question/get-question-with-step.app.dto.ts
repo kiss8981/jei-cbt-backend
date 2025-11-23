@@ -13,6 +13,9 @@ export class GetQuestionWithStepAppDto {
   nextQuestionCount: number | null;
 
   @Expose()
+  totalQuestionCount: number;
+
+  @Expose()
   questionMapId: number;
 
   @Expose()
