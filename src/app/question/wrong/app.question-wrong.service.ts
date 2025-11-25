@@ -61,7 +61,7 @@ export class AppQuestionWrongService {
           excludeExtraneousValues: true,
         },
       ),
-      total,
+      totalCount: total,
       page,
       pageSize,
     });
