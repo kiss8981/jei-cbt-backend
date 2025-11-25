@@ -8,7 +8,10 @@ import {
   CreateQuestionAdminDto,
   CreateQuestionMultipleChoiceAdminDto,
 } from 'src/dtos/admin/question/create-question.admin.dto';
-import { UpdateQuestionAdminDto } from 'src/dtos/admin/question/update-question.admin.dto';
+import {
+  UpdateQuestionAdminDto,
+  UpdateQuestionSortAnswerAdminDto,
+} from 'src/dtos/admin/question/update-question.admin.dto';
 import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-question-list-query.admin.dto';
 import { GetQuestionListAdminDto } from 'src/dtos/admin/question/get-question-list.admin.dto';
 import {
@@ -112,6 +115,49 @@ export class AdminQuestionService {
     );
   }
 
+  private async updateQuestionBySortAnswer(
+    questionId: number,
+    updateQuestionSortAnswerAdminDto: UpdateQuestionSortAnswerAdminDto[],
+  ) {
+    const existingAnswers =
+      await this.answerRepository.findByQuestionId(questionId);
+
+    const deletedAnswers = existingAnswers.filter(
+      (ea) =>
+        !updateQuestionSortAnswerAdminDto.find(
+          (uqa) => uqa.id && uqa.id == ea.id,
+        ),
+    );
+    const updatedAnswers = updateQuestionSortAnswerAdminDto.filter(
+      (uqa) => uqa.id && existingAnswers.find((ea) => ea.id == uqa.id),
+    );
+    const createdAnswers = updateQuestionSortAnswerAdminDto.filter(
+      (uqa) => !uqa.id,
+    );
+
+    if (deletedAnswers.length > 0) {
+      await this.answerRepository.deleteByIds(
+        deletedAnswers.map((da) => da.id),
+      );
+    }
+
+    for await (const updatedAnswer of updatedAnswers) {
+      await this.answerRepository.updateById(updatedAnswer.id, {
+        content: updatedAnswer.content,
+      });
+    }
+
+    if (createdAnswers.length > 0) {
+      await this.answerRepository.createMany(
+        createdAnswers.map((ca) => ({
+          questionId: questionId,
+          content: ca.content,
+          isCorrect: true,
+        })),
+      );
+    }
+  }
+
   async create(dto: CreateQuestionAdminDto) {
     await this.entityManager.transaction(async (manager) => {
       const question = await this.questionRepository.create(
@@ -201,6 +247,18 @@ export class AdminQuestionService {
       explanation: dto.explanation,
       additionalText: dto.additionalText,
     });
+
+    switch (question.type) {
+      case QuestionType.SHORT_ANSWER:
+        await this.updateQuestionBySortAnswer(
+          id,
+          dto.answersForShortAnswers || [],
+        );
+        break;
+
+      default:
+        break;
+    }
 
     return this.getById(id);
   }
@@ -309,6 +367,12 @@ export class AdminQuestionService {
             type: question.type,
             question: question.title,
             photos: photoDto,
+            correctAnswers: answers.map((answer) => {
+              return {
+                id: Number(answer.id),
+                content: answer.content,
+              };
+            }),
           },
           { excludeExtraneousValues: true },
         );

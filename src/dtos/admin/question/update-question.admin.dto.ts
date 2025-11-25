@@ -54,10 +54,8 @@ export class UpdateQuestionAdminDto {
   // @Type(() => CreateQuestionMatchingAdminDto)
   // answersForMatching?: CreateQuestionMatchingAdminDto[]; // 연결형 보기 목록
 
-  // @ValidateIf((o: EditQuestionAdminDto) => o.type == QuestionType.SHORT_ANSWER)
-  // @IsNotEmpty({ message: '단답형 문제의 정답은 필수입니다.' })
-  // @IsString({ each: true })
-  // answersForShortAnswer?: string[]; // 단답형 정답 목록
+  @IsOptional()
+  answersForShortAnswers?: UpdateQuestionSortAnswerAdminDto[]; // 단답형 정답 목록
 
   // @ValidateIf((o: EditQuestionAdminDto) => o.type == QuestionType.COMPLETION)
   // @ValidateNested({ each: true })
@@ -75,6 +73,16 @@ export class UpdateQuestionAdminDto {
   // @IsNotEmpty({ message: '면접형 문제의 정답은 필수입니다.' })
   // @IsString()
   // answersForInterview?: string; // 면접형 정답
+}
+
+export class UpdateQuestionSortAnswerAdminDto {
+  @IsNumber({}, { message: '정답 ID는 숫자여야 합니다.' })
+  @IsOptional()
+  id: number | null; // 정답 ID (기존 정답인 경우에만 필요, 새로 추가하는 정답은 null)
+
+  @IsNotEmpty({ message: '정답 내용은 필수입니다.' })
+  @IsString()
+  content: string; // 정답 내용
 }
 
 export class CreateQuestionMultipleChoiceAnswerAdminDto {

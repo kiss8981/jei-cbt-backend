@@ -76,6 +76,9 @@ export class GetShortAnswerQuestionAdminDto extends GetQuestionAdminDto {
 
   @Expose()
   question: string;
+
+  @Expose()
+  correctAnswers: { id: number; answer: string }[];
 }
 
 export class GetCompletionQuestionAdminDto extends GetQuestionAdminDto {

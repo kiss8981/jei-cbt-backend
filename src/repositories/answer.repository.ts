@@ -29,4 +29,17 @@ export class AnswerRepository {
       return this.answerRepository.delete({ questionId });
     }
   }
+
+  async deleteByIds(answerIds: number[]) {
+    return this.answerRepository.softDelete(answerIds);
+  }
+
+  async updateById(answerId: number, updateData: Partial<Answer>) {
+    return this.answerRepository.update({ id: answerId }, updateData);
+  }
+
+  async createMany(answers: Partial<Answer>[]) {
+    const newAnswers = this.answerRepository.create(answers);
+    return this.answerRepository.save(newAnswers);
+  }
 }
