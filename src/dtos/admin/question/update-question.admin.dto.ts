@@ -48,11 +48,8 @@ export class UpdateQuestionAdminDto {
   // @Type(() => CreateQuestionMultipleChoiceAdminDto)
   // answersForMultipleChoice?: CreateQuestionMultipleChoiceAdminDto[]; // 선다형 보기 목록
 
-  // @ValidateIf((o: EditQuestionAdminDto) => o.type == QuestionType.MATCHING)
-  // @IsNotEmpty({ message: '연결형 문제의 보기는 필수입니다.' })
-  // @ValidateNested({ each: true })
-  // @Type(() => CreateQuestionMatchingAdminDto)
-  // answersForMatching?: CreateQuestionMatchingAdminDto[]; // 연결형 보기 목록
+  @IsOptional()
+  answersForMatching?: UpdateQuestionMatchingAdminDto[]; // 연결형 보기 목록
 
   @IsOptional()
   answersForShortAnswers?: UpdateQuestionSortAnswerAdminDto[]; // 단답형 정답 목록
@@ -105,7 +102,15 @@ export class CreateQuestionCompletionAdminDto {
   isCorrect: boolean; // 정답 여부
 }
 
-export class CreateQuestionMatchingAdminDto {
+export class UpdateQuestionMatchingAdminDto {
+  @IsNumber()
+  @IsOptional()
+  leftItemId: number | null; // 왼쪽 항목 ID (기존 항목인 경우에만 필요, 새로 추가하는 항목은 null)
+
+  @IsNumber()
+  @IsOptional()
+  pairingItemId: number | null; // 짝지어진 오른쪽 항목 ID (기존 항목인 경우에만 필요, 새로 추가하는 항목은 null)
+
   @IsString()
   @IsNotEmpty({ message: '연결형 문제의 왼쪽 항목은 필수입니다.' })
   leftItem: string; // 연결형 왼쪽 항목

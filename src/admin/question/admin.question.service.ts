@@ -10,6 +10,7 @@ import {
 } from 'src/dtos/admin/question/create-question.admin.dto';
 import {
   UpdateQuestionAdminDto,
+  UpdateQuestionMatchingAdminDto,
   UpdateQuestionSortAnswerAdminDto,
 } from 'src/dtos/admin/question/update-question.admin.dto';
 import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-question-list-query.admin.dto';
@@ -32,7 +33,7 @@ import { AnswerRepository } from 'src/repositories/answer.repository';
 import { PhotoMapRepository } from 'src/repositories/photo-map-repository';
 import { QuestionRepository } from 'src/repositories/question.repository';
 import { UnitRepository } from 'src/repositories/unit.repository';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { AdminUploadService } from '../upload/admin.upload.service';
 import { PhotoMappingTypeEnum } from 'src/common/constants/photo-mapping-type.enum';
 import * as xlsx from 'xlsx';
@@ -113,6 +114,51 @@ export class AdminQuestionService {
         excludeExtraneousValues: true,
       },
     );
+  }
+
+  private async updateQuestionByMatchingAnswer(
+    questionId: number,
+    dtos: UpdateQuestionMatchingAdminDto[],
+  ) {
+    const existingAnswers =
+      await this.answerRepository.findByQuestionId(questionId);
+
+    const incomingIds = dtos
+      .flatMap((dto) => [dto.leftItemId, dto.pairingItemId])
+      .filter((id) => id !== null);
+
+    const answersToDelete = existingAnswers.filter(
+      (answer) => !incomingIds.includes(Number(answer.id)),
+    );
+
+    if (answersToDelete.length > 0) {
+      await this.answerRepository.deleteByIds(answersToDelete.map((a) => a.id));
+    }
+
+    for (const dto of dtos) {
+      // CASE A: 새로운 항목 추가 (ID가 없는 경우)
+      if (!dto.leftItemId && !dto.pairingItemId) {
+        // 왼쪽 항목 생성
+        const leftItem = await this.answerRepository.create({
+          content: dto.leftItem,
+          questionId: questionId,
+        });
+
+        await this.answerRepository.create({
+          content: dto.rightItem,
+          questionId: questionId,
+          pairingAnswerId: leftItem.id, // 짝꿍 ID 연결
+        });
+      } else {
+        await this.answerRepository.updateById(dto.leftItemId, {
+          content: dto.leftItem,
+        });
+
+        await this.answerRepository.updateById(dto.pairingItemId, {
+          content: dto.rightItem,
+        });
+      }
+    }
   }
 
   private async updateQuestionBySortAnswer(
@@ -255,7 +301,12 @@ export class AdminQuestionService {
           dto.answersForShortAnswers || [],
         );
         break;
-
+      case QuestionType.MATCHING:
+        await this.updateQuestionByMatchingAnswer(
+          id,
+          dto.answersForMatching || [],
+        );
+        break;
       default:
         break;
     }
@@ -335,20 +386,25 @@ export class AdminQuestionService {
             unitName: question.unit.name,
             createdAt: question.createdAt,
             type: question.type,
-            leftItems: answers
+            items: answers
               .filter((answer) => !answer.pairingAnswerId)
-              .sort(() => Math.random() - 0.5)
-              .map((answer) => ({
-                id: answer.id,
-                option: answer.content,
-              })),
-            rightItems: answers
-              .filter((answer) => answer.pairingAnswerId)
-              .sort(() => Math.random() - 0.5)
-              .map((answer) => ({
-                id: answer.id,
-                option: answer.content,
-              })),
+              .map((leftItem) => {
+                const rightItem = answers.find(
+                  (answer) => answer.pairingAnswerId == leftItem.id,
+                );
+                return {
+                  leftItem: {
+                    id: leftItem.id,
+                    content: leftItem.content,
+                  },
+                  rightItem: rightItem
+                    ? {
+                        id: rightItem.id,
+                        content: rightItem.content,
+                      }
+                    : null,
+                };
+              }),
             photos: photoDto,
           },
           { excludeExtraneousValues: true },
@@ -686,10 +742,12 @@ export class AdminQuestionService {
 
     const plainDtos = plainToInstance(CreateQuestionAdminDto, transformedData);
     // QuestionType.MATCHING
+
     // QuestionType.MULTIPLE_SHORT_ANSWER
-    // QuestionType.MULTIPLE_SHORT_ANSWER
+    // QuestionType.INTERVIEW
     // QuestionType.MULTIPLE_CHOICE
     // QuestionType.TRUE_FALSE
+    // QuestionType.SHORT_ANSWER
 
     for await (const dto of plainDtos) {
       try {

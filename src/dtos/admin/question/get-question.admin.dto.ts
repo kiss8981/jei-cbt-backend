@@ -58,16 +58,10 @@ export class GetMatchingQuestionAdminDto extends GetQuestionAdminDto {
   type: QuestionType.MATCHING;
 
   @Expose()
-  leftItems: {
-    id: number;
-    option: string;
-  }[];
-
-  @Expose()
-  rightItems: {
-    id: number;
-    option: string;
-  }[];
+  items: {
+    leftItem: { id: number; content: string };
+    rightItem: { id: number; content: string };
+  };
 }
 
 export class GetShortAnswerQuestionAdminDto extends GetQuestionAdminDto {
