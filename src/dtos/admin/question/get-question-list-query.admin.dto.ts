@@ -1,5 +1,6 @@
 import { IsNumberString, IsOptional, IsString } from 'class-validator';
-import { toArray } from 'src/utils/toArray';
+import { QuestionType } from 'src/common/constants/question-type.enum';
+import { toArray, toEnumArray } from 'src/utils/toArray';
 
 export class GetQuestionListQueryAdminDto {
   @IsOptional()
@@ -14,6 +15,11 @@ export class GetQuestionListQueryAdminDto {
   @IsString({ each: true })
   @toArray()
   unitIds?: number[];
+
+  @IsOptional()
+  @IsString({ each: true })
+  @toEnumArray(QuestionType)
+  questionTypes?: QuestionType[];
 
   @IsOptional()
   @IsString()

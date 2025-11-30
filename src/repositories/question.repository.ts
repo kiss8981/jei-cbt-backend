@@ -88,7 +88,11 @@ export class QuestionRepository {
   async findAndCount(
     page: number,
     limit: number,
-    filters: { keyword?: string; unitIds?: number[] },
+    filters: {
+      keyword?: string;
+      unitIds?: number[];
+      questionTypes?: QuestionType[];
+    },
   ): Promise<[Question[], number]> {
     const queryBuilder = this.questionRepository.createQueryBuilder('question');
 
@@ -101,6 +105,12 @@ export class QuestionRepository {
     if (filters.unitIds && filters.unitIds.length > 0) {
       queryBuilder.andWhere('question.unitId IN (:...unitIds)', {
         unitIds: filters.unitIds,
+      });
+    }
+
+    if (filters.questionTypes && filters.questionTypes.length > 0) {
+      queryBuilder.andWhere('question.type IN (:...questionTypes)', {
+        questionTypes: filters.questionTypes,
       });
     }
 

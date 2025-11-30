@@ -47,10 +47,10 @@ export class GetMultipleChoiceQuestionAdminDto extends GetQuestionAdminDto {
   question: string;
 
   @Expose()
-  isMultipleAnswer: boolean;
+  isMultipleAnswer: boolean; // 다중 정답 여부 서비스단에서 관리 프론트 미사용
 
   @Expose()
-  choices: { id: number; option: string }[];
+  choices: { id: number; content: string; isCorrect: boolean }[];
 }
 
 export class GetMatchingQuestionAdminDto extends GetQuestionAdminDto {
@@ -89,6 +89,9 @@ export class GetMultipleShortAnswerQuestionAdminDto extends GetQuestionAdminDto 
 
   @Expose()
   question: string; // 네덜란드의 수도는 {0}이고, 프랑스의 수도는 {1}이다.
+
+  @Expose()
+  correctAnswers: { id: number; content: string; orderIndex: number }[];
 }
 
 export class GetInterviewQuestionAdminDto extends GetQuestionAdminDto {
@@ -97,4 +100,7 @@ export class GetInterviewQuestionAdminDto extends GetQuestionAdminDto {
 
   @Expose()
   question: string; // 면접 질문 내용
+
+  @Expose()
+  answer: string; // 모범 답안 내용
 }

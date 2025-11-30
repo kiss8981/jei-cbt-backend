@@ -11,6 +11,8 @@ import {
 import {
   UpdateQuestionAdminDto,
   UpdateQuestionMatchingAdminDto,
+  UpdateQuestionMultipleChoiceAdminDto,
+  UpdateQuestionMultipleShortAnswerAdminDto,
   UpdateQuestionSortAnswerAdminDto,
 } from 'src/dtos/admin/question/update-question.admin.dto';
 import { GetQuestionListQueryAdminDto } from 'src/dtos/admin/question/get-question-list-query.admin.dto';
@@ -55,7 +57,7 @@ export class AdminQuestionService {
     limit: number,
     query: GetQuestionListQueryAdminDto,
   ) {
-    const { keyword, unitIds } = query;
+    const { keyword, unitIds, questionTypes } = query;
 
     const [questions, total] = await this.questionRepository.findAndCount(
       page,
@@ -63,6 +65,7 @@ export class AdminQuestionService {
       {
         keyword,
         unitIds,
+        questionTypes,
       },
     );
 
@@ -114,6 +117,102 @@ export class AdminQuestionService {
         excludeExtraneousValues: true,
       },
     );
+  }
+  private async updateQuestionByTrueFalseAnswer(
+    questionId: number,
+    dto: boolean,
+  ) {
+    const existingAnswers =
+      await this.answerRepository.findByQuestionId(questionId);
+
+    if (existingAnswers.length === 0) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+    }
+
+    await this.answerRepository.updateById(existingAnswers[0].id, {
+      isCorrect: dto,
+    });
+  }
+
+  private async updateQuestionByInterviewAnswer(
+    questionId: number,
+    dto: string,
+  ) {
+    const existingAnswers =
+      await this.answerRepository.findByQuestionId(questionId);
+
+    if (existingAnswers.length === 0) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+    }
+
+    await this.answerRepository.updateById(existingAnswers[0].id, {
+      content: dto,
+    });
+  }
+
+  private async updateQuestionByMultipleShortAnswer(
+    questionId: number,
+    dtos: UpdateQuestionMultipleShortAnswerAdminDto[],
+  ) {
+    const existingAnswers =
+      await this.answerRepository.findByQuestionId(questionId);
+
+    const incomingIds = dtos.map((dto) => dto.id).filter((id) => id !== null);
+    const answersToDelete = existingAnswers.filter(
+      (answer) => !incomingIds.includes(Number(answer.id)),
+    );
+
+    if (answersToDelete.length > 0) {
+      await this.answerRepository.deleteByIds(answersToDelete.map((a) => a.id));
+    }
+
+    for (const dto of dtos) {
+      if (!dto.id) {
+        await this.answerRepository.create({
+          content: dto.content,
+          isCorrect: true,
+          orderIndex: dto.orderIndex,
+          questionId: questionId,
+        });
+      } else {
+        await this.answerRepository.updateById(dto.id, {
+          content: dto.content,
+          orderIndex: dto.orderIndex,
+        });
+      }
+    }
+  }
+
+  private async updateQuestionByMultipleChoiceAnswer(
+    questionId: number,
+    dtos: UpdateQuestionMultipleChoiceAdminDto[],
+  ) {
+    const existingAnswers =
+      await this.answerRepository.findByQuestionId(questionId);
+
+    const incomingIds = dtos.map((dto) => dto.id).filter((id) => id !== null);
+    const answersToDelete = existingAnswers.filter(
+      (answer) => !incomingIds.includes(Number(answer.id)),
+    );
+
+    if (answersToDelete.length > 0) {
+      await this.answerRepository.deleteByIds(answersToDelete.map((a) => a.id));
+    }
+
+    for (const dto of dtos) {
+      if (!dto.id) {
+        await this.answerRepository.create({
+          content: dto.content,
+          isCorrect: dto.isCorrect,
+          questionId: questionId,
+        });
+      } else {
+        await this.answerRepository.updateById(dto.id, {
+          content: dto.content,
+          isCorrect: dto.isCorrect,
+        });
+      }
+    }
   }
 
   private async updateQuestionByMatchingAnswer(
@@ -307,6 +406,27 @@ export class AdminQuestionService {
           dto.answersForMatching || [],
         );
         break;
+      case QuestionType.TRUE_FALSE:
+        await this.updateQuestionByTrueFalseAnswer(
+          id,
+          dto.answersForCorrectAnswerForTrueFalse,
+        );
+        break;
+      case QuestionType.MULTIPLE_CHOICE:
+        await this.updateQuestionByMultipleChoiceAnswer(
+          id,
+          dto.answersForMultipleChoice || [],
+        );
+        break;
+      case QuestionType.MULTIPLE_SHORT_ANSWER:
+        await this.updateQuestionByMultipleShortAnswer(
+          id,
+          dto.answersForMultipleShortAnswer || [],
+        );
+        break;
+      case QuestionType.INTERVIEW:
+        await this.updateQuestionByInterviewAnswer(id, dto.answersForInterview);
+        break;
       default:
         break;
     }
@@ -368,7 +488,8 @@ export class AdminQuestionService {
             question: question.title,
             choices: answers.map((answer) => ({
               id: answer.id,
-              option: answer.content,
+              content: answer.content,
+              isCorrect: answer.isCorrect,
             })),
             photos: photoDto,
           },
@@ -463,6 +584,11 @@ export class AdminQuestionService {
             type: question.type,
             question: question.title,
             photos: photoDto,
+            correctAnswers: answers.map((answer) => ({
+              id: Number(answer.id),
+              content: answer.content,
+              orderIndex: Number(answer.orderIndex),
+            })),
           },
           { excludeExtraneousValues: true },
         );
@@ -480,6 +606,7 @@ export class AdminQuestionService {
             createdAt: question.createdAt,
             type: question.type,
             question: question.title,
+            answer: answers[0].content,
             photos: photoDto,
           },
           { excludeExtraneousValues: true },
