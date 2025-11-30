@@ -795,7 +795,7 @@ export class AdminQuestionService {
                 .replaceAll('\r', '')
                 .split('\n')
                 .filter((item) => item.trim() !== '')
-                .map((item) => item.toLowerCase() == 'true');
+                .map((item) => item.trim().toLowerCase() == 'true');
 
               items.map((item, idx) => {
                 choices.push({
