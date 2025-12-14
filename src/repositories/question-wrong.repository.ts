@@ -27,6 +27,12 @@ export class QuestionWrongRepository {
     });
   }
 
+  async findByUserIdAndWrongId(userId: number, wrongId: number) {
+    return this.questionWrongRepository.findOne({
+      where: { userId, id: wrongId },
+    });
+  }
+
   async findAndCountNotReviewByUserId(
     userId: number,
     page: number,

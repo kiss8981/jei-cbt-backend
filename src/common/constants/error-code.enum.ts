@@ -27,6 +27,10 @@ export const ErrorCodes = {
     code: 4100,
     message: '존재하지 않는 문제입니다.',
   },
+  WRONG_QUESTION_NOT_FOUND: {
+    code: 4101,
+    message: '존재하지 않는 오답노트 문제입니다.',
+  },
   UNIT_NOT_FOUND: {
     code: 4200,
     message: '존재하지 않는 능력 단위 입니다.',

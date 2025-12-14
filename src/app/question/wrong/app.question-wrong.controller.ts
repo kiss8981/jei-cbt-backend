@@ -1,4 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { AppQuestionWrongService } from './app.question-wrong.service';
 import { User, UserPayload } from 'src/common/decorators/user.decorator';
@@ -23,6 +31,30 @@ export class AppQuestionWrongController {
       {
         sortType: query.sortType,
       },
+    );
+  }
+
+  @Get(':wrongId')
+  async getWrongQuestionDetail(
+    @User() user: UserPayload,
+    @Param('wrongId') wrongId: number,
+  ) {
+    return this.appQuestionWrongService.getWrongQuestionDetail(
+      user.sub,
+      wrongId,
+    );
+  }
+
+  @Post(':wrongId/review')
+  async wrongQuestionAsReviewed(
+    @User() user: UserPayload,
+    @Param('wrongId') wrongId: number,
+    @Body() body: any,
+  ) {
+    return this.appQuestionWrongService.wrongQuestionAnswer(
+      user.sub,
+      wrongId,
+      body,
     );
   }
 }

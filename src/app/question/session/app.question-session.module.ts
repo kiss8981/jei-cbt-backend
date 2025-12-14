@@ -46,5 +46,6 @@ import { AppQuestionWrongModule } from '../wrong/app.question-wrong.module';
     AnswerRepository,
     QuestionSessionSegmentRepository,
   ],
+  exports: [AppQuestionSessionService],
 })
 export class AppQuestionSessionModule {}

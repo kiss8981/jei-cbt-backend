@@ -9,10 +9,12 @@ import { Question } from 'src/entities/question.entity';
 import { QuestionRepository } from 'src/repositories/question.repository';
 import { Unit } from 'src/entities/unit.entity';
 import { UnitRepository } from 'src/repositories/unit.repository';
+import { AppQuestionModule } from '../app.question.module';
 
 @Module({
   imports: [
     AppAuthModule,
+    AppQuestionModule,
     TypeOrmModule.forFeature([QuestionWrong, Question, Unit]),
   ],
   controllers: [AppQuestionWrongController],

@@ -37,6 +37,7 @@ import { QuestionSessionMap } from 'src/entities/question-session-map.entity';
 import { GetQuestionSessionResultAppDto } from 'src/dtos/app/question/get-question-session-result.app.dto';
 import { AppQuestionSessionSubmissionService } from './app.question-session-submission.service';
 import { AppQuestionService } from '../app.question.service';
+import { AppQuestionSharedService } from '../app.question-shared.service';
 
 @Injectable()
 export class AppQuestionSessionService {
@@ -45,9 +46,9 @@ export class AppQuestionSessionService {
     private readonly questionSessionMapRepository: QuestionSessionMapRepository,
     private readonly questionSessionSegmentRepository: QuestionSessionSegmentRepository,
     private readonly questionRepository: QuestionRepository,
-    private readonly appQuestionSesstionSubmissionService: AppQuestionSessionSubmissionService,
     private readonly unitRepository: UnitRepository,
     private readonly appQuestionService: AppQuestionService,
+    private readonly appQuestionSharedService: AppQuestionSharedService,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
   ) {}
@@ -93,7 +94,7 @@ export class AppQuestionSessionService {
           }
 
           const { answer, explanation, userAnswerMapped } =
-            await this.appQuestionSesstionSubmissionService.getCorrectAnswerDetails(
+            await this.appQuestionSharedService.getCorrectAnswerDetails(
               question,
               map.userAnswer,
             );
