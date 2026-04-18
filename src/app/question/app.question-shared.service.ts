@@ -9,20 +9,28 @@ import { AnswerRepository } from 'src/repositories/answer.repository';
 export class AppQuestionSharedService {
   constructor(private readonly answerRepository: AnswerRepository) {}
 
-  /**
-   * 질문 유형에 따라 정답 텍스트와 설명을 반환합니다.
-   * 사용자 답변의 정답 여부와는 관계없이 순수한 정답 정보를 제공합니다.
-   */
-  /**
-   * 질문 유형에 따라 정답 텍스트, 설명, 그리고 사용자 답변의 매핑된 텍스트를 반환합니다.
-   */
+  private normalizeText(value: string) {
+    return value.trim().toLowerCase();
+  }
+
+  private parseCommaSeparatedAnswers(value: string) {
+    return Array.from(
+      new Set(
+        value
+          .split(',')
+          .map((item) => this.normalizeText(item))
+          .filter(Boolean),
+      ),
+    ).sort();
+  }
+
   public async getCorrectAnswerDetails(
     question: Question,
-    userAnswer: SubmissionAnswerRequestAppDto, // userAnswer를 인수로 추가
+    userAnswer: SubmissionAnswerRequestAppDto,
   ): Promise<{
     explanation: string | null;
-    answer: string | null; // 정답 텍스트
-    userAnswerMapped: string | null; // 사용자 답변 매핑 텍스트
+    answer: string | null;
+    userAnswerMapped: string | null;
   }> {
     const correctAnswers = await this.answerRepository.findByQuestionId(
       question.id,
@@ -30,63 +38,64 @@ export class AppQuestionSharedService {
 
     const explanation = question.explanation;
     let answer: string | null = null;
-    let userAnswerMapped: string | null = null; // 사용자 답변을 매핑할 변수
+    let userAnswerMapped: string | null = null;
 
     switch (question.type) {
       case QuestionType.TRUE_FALSE:
-        // 정답 매핑
         answer = correctAnswers[0].isCorrect ? '참' : '거짓';
-        // 사용자 답변 매핑
         userAnswerMapped = userAnswer.answersForTrueFalse ? '참' : '거짓';
         break;
 
       case QuestionType.MULTIPLE_CHOICE:
-        // 정답 매핑 (정답 옵션들의 내용)
-        const correctOptions = correctAnswers.filter((ans) => ans.isCorrect);
-        answer = correctOptions.map((ans) => ans.content).join(', ');
+        answer = correctAnswers
+          .filter((ans) => ans.isCorrect)
+          .map((ans) => ans.content)
+          .join(', ');
+        userAnswerMapped = correctAnswers
+          .filter((ans) =>
+            userAnswer.answersForMultipleChoice.includes(Number(ans.id)),
+          )
+          .map((ans) => ans.content)
+          .join(', ');
+        break;
 
-        // 사용자 답변 매핑 (사용자가 선택한 옵션 ID에 해당하는 내용)
-        const userOptions = correctAnswers.filter((ans) =>
-          userAnswer.answersForMultipleChoice.includes(Number(ans.id)),
-        );
-        userAnswerMapped = userOptions.map((ans) => ans.content).join(', ');
+      case QuestionType.MULTIPLE_CHOICE_INPUT:
+        answer = correctAnswers
+          .filter((ans) => ans.isCorrect)
+          .map((ans) => ans.content)
+          .join(', ');
+        userAnswerMapped = userAnswer.answersForShortAnswer.trim();
         break;
 
       case QuestionType.MATCHING:
-        // 정답 매핑
-        const correctMatchings = correctAnswers
+        answer = correctAnswers
           .filter((ans) => ans.pairingAnswerId != null)
           .map((ans) => ({
             leftName: ans.content,
             rightName: correctAnswers.find((a) => a.id == ans.pairingAnswerId)
               ?.content,
-          }));
-        answer = correctMatchings
+          }))
           .map((pair) => `${pair.leftName} - ${pair.rightName}`)
           .join(', ');
-
-        // 사용자 답변 매핑 (사용자가 제출한 ID 쌍에 해당하는 내용)
-        const userMatchings = userAnswer.answersForMatching.map((userPair) => {
-          const leftItem = correctAnswers.find(
-            (ans) => ans.id == userPair.leftItemId,
-          );
-          const rightItem = correctAnswers.find(
-            (ans) => ans.id == userPair.rightItemId,
-          );
-          return `${leftItem?.content || 'Unknown'} - ${rightItem?.content || 'Unknown'}`;
-        });
-        userAnswerMapped = userMatchings.join(', ');
+        userAnswerMapped = userAnswer.answersForMatching
+          .map((userPair) => {
+            const leftItem = correctAnswers.find(
+              (ans) => ans.id == userPair.leftItemId,
+            );
+            const rightItem = correctAnswers.find(
+              (ans) => ans.id == userPair.rightItemId,
+            );
+            return `${leftItem?.content || 'Unknown'} - ${rightItem?.content || 'Unknown'}`;
+          })
+          .join(', ');
         break;
 
       case QuestionType.SHORT_ANSWER:
-        // 정답 매핑
         answer = correctAnswers.find((ans) => ans.isCorrect)?.content || null;
-        // 사용자 답변 매핑
         userAnswerMapped = userAnswer.answersForShortAnswer.trim();
         break;
 
       case QuestionType.MULTIPLE_SHORT_ANSWER:
-        // 정답 매핑
         const correctShortAnswerMap = new Map<number, string[]>();
         correctAnswers
           .filter((ans) => ans.isCorrect)
@@ -101,8 +110,6 @@ export class AppQuestionSharedService {
         answer = Array.from(correctShortAnswerMap)
           .map(([index, answers]) => `${index + 1}: ${answers[0]}`)
           .join(', ');
-
-        // 사용자 답변 매핑 (순서(orderIndex)별로 사용자가 제출한 내용)
         userAnswerMapped = userAnswer.answersForMultipleShortAnswer
           .map(
             (userAns) => `${userAns.orderIndex + 1}: ${userAns.content.trim()}`,
@@ -111,9 +118,7 @@ export class AppQuestionSharedService {
         break;
 
       case QuestionType.INTERVIEW:
-        // 정답 매핑
         answer = correctAnswers.find((ans) => ans.isCorrect)?.content || null;
-        // 사용자 답변 매핑 (사용자가 제출한 내용)
         userAnswerMapped = userAnswer.answersForInterview.trim();
         break;
     }
@@ -137,9 +142,10 @@ export class AppQuestionSharedService {
       question.id,
     );
 
-    // 새로 분리된 함수를 호출하여 정답 정보 (explanation, answer 텍스트)를 가져옴
-    const { explanation, answer, userAnswerMapped } =
-      await this.getCorrectAnswerDetails(question, userAnswer);
+    const { explanation, answer } = await this.getCorrectAnswerDetails(
+      question,
+      userAnswer as SubmissionAnswerRequestAppDto,
+    );
 
     switch (question.type) {
       case QuestionType.TRUE_FALSE:
@@ -168,25 +174,43 @@ export class AppQuestionSharedService {
             };
           }
 
-          const isCorrect = correctOptionIds.every((id) =>
-            userAnswer.answersForMultipleChoice.includes(Number(id)),
-          );
-
           return {
-            isCorrect,
-            explanation,
-            answer,
-          };
-        } else {
-          return {
-            isCorrect:
-              userAnswer.answersForMultipleChoice.length == 1 &&
-              Number(correctOptionIds[0]) ==
-                Number(userAnswer.answersForMultipleChoice[0]),
+            isCorrect: correctOptionIds.every((id) =>
+              userAnswer.answersForMultipleChoice.includes(Number(id)),
+            ),
             explanation,
             answer,
           };
         }
+
+        return {
+          isCorrect:
+            userAnswer.answersForMultipleChoice.length == 1 &&
+            Number(correctOptionIds[0]) ==
+              Number(userAnswer.answersForMultipleChoice[0]),
+          explanation,
+          answer,
+        };
+
+      case QuestionType.MULTIPLE_CHOICE_INPUT:
+        const normalizedCorrectAnswers = correctAnswers
+          .filter((ans) => ans.isCorrect)
+          .map((ans) => this.normalizeText(ans.content))
+          .sort();
+        const normalizedUserAnswers = this.parseCommaSeparatedAnswers(
+          userAnswer.answersForShortAnswer,
+        );
+
+        return {
+          isCorrect:
+            normalizedCorrectAnswers.length === normalizedUserAnswers.length &&
+            normalizedCorrectAnswers.every(
+              (value, index) => value === normalizedUserAnswers[index],
+            ),
+          explanation,
+          answer,
+        };
+
       case QuestionType.MATCHING:
         const matchings = correctAnswers
           .filter((ans) => ans.pairingAnswerId != null)
@@ -203,19 +227,18 @@ export class AppQuestionSharedService {
           };
         }
 
-        const isMatchingCorrect = matchings.every((pair) =>
-          userAnswer.answersForMatching.some(
-            (userPair) =>
-              userPair.leftItemId == pair.leftId &&
-              userPair.rightItemId == pair.rightId,
-          ),
-        );
-
         return {
-          isCorrect: isMatchingCorrect,
+          isCorrect: matchings.every((pair) =>
+            userAnswer.answersForMatching.some(
+              (userPair) =>
+                userPair.leftItemId == pair.leftId &&
+                userPair.rightItemId == pair.rightId,
+            ),
+          ),
           explanation,
           answer,
         };
+
       case QuestionType.SHORT_ANSWER:
         const correctShortAnswer = correctAnswers.find(
           (ans) => ans.isCorrect,
@@ -227,6 +250,7 @@ export class AppQuestionSharedService {
           explanation,
           answer,
         };
+
       case QuestionType.MULTIPLE_SHORT_ANSWER:
         const correctShortAnswerMap = new Map<number, string[]>();
         correctAnswers
@@ -240,25 +264,25 @@ export class AppQuestionSharedService {
             }
           });
 
-        const isCorrectMultipleShortAnswer =
-          userAnswer.answersForMultipleShortAnswer.every((userAns) => {
-            const correctShortAnswers =
-              correctShortAnswerMap.get(userAns.orderIndex) || [];
-            return correctShortAnswers.some(
-              (ans) =>
-                ans.trim().toLowerCase() ===
-                userAns.content.trim().toLowerCase(),
-            );
-          });
-
         return {
-          isCorrect: isCorrectMultipleShortAnswer,
+          isCorrect: userAnswer.answersForMultipleShortAnswer.every(
+            (userAns) => {
+              const correctShortAnswers =
+                correctShortAnswerMap.get(userAns.orderIndex) || [];
+              return correctShortAnswers.some(
+                (ans) =>
+                  ans.trim().toLowerCase() ===
+                  userAns.content.trim().toLowerCase(),
+              );
+            },
+          ),
           explanation,
           answer,
         };
+
       case QuestionType.INTERVIEW:
         return {
-          isCorrect: true, // 인터뷰는 보통 채점 불가로 간주
+          isCorrect: true,
           explanation,
           answer,
         };

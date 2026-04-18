@@ -43,7 +43,9 @@ export class CreateQuestionAdminDto {
   answersForCorrectAnswerForTrueFalse?: boolean; // 진위형 정답
 
   @ValidateIf(
-    (o: CreateQuestionAdminDto) => o.type == QuestionType.MULTIPLE_CHOICE,
+    (o: CreateQuestionAdminDto) =>
+      o.type == QuestionType.MULTIPLE_CHOICE ||
+      o.type == QuestionType.MULTIPLE_CHOICE_INPUT,
   )
   @IsNotEmpty({ message: '선다형 문제의 보기는 필수입니다.' })
   @ValidateNested({ each: true })

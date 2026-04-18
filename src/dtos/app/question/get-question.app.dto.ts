@@ -40,7 +40,9 @@ export class GetTrueFalseQuestionAppDto extends GetQuestionAppDto {
 
 export class GetMultipleChoiceQuestionAppDto extends GetQuestionAppDto {
   @Expose()
-  type: QuestionType.MULTIPLE_CHOICE;
+  type:
+    | QuestionType.MULTIPLE_CHOICE
+    | QuestionType.MULTIPLE_CHOICE_INPUT;
 
   @Expose()
   question: string;

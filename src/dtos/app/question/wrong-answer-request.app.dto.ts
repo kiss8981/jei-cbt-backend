@@ -35,7 +35,9 @@ export class WrongAnswerRequestAppDto {
   answersForMatching?: SubmissionAnswersForMatchingAppDto[];
 
   @ValidateIf(
-    (o: WrongAnswerRequestAppDto) => o.type == QuestionType.SHORT_ANSWER,
+    (o: WrongAnswerRequestAppDto) =>
+      o.type == QuestionType.SHORT_ANSWER ||
+      o.type == QuestionType.MULTIPLE_CHOICE_INPUT,
   )
   @IsNotEmpty({ message: '정답 내용은 필수입니다.' })
   @IsString()

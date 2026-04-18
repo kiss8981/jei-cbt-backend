@@ -326,6 +326,7 @@ export class AdminQuestionService {
           question.answers = [answer];
           break;
         case QuestionType.MULTIPLE_CHOICE:
+        case QuestionType.MULTIPLE_CHOICE_INPUT:
           const answers = await this.createMultipleChoiceQuestion(
             question,
             dto,
@@ -413,6 +414,7 @@ export class AdminQuestionService {
         );
         break;
       case QuestionType.MULTIPLE_CHOICE:
+      case QuestionType.MULTIPLE_CHOICE_INPUT:
         await this.updateQuestionByMultipleChoiceAnswer(
           id,
           dto.answersForMultipleChoice || [],
@@ -473,6 +475,7 @@ export class AdminQuestionService {
           { excludeExtraneousValues: true },
         );
       case QuestionType.MULTIPLE_CHOICE:
+      case QuestionType.MULTIPLE_CHOICE_INPUT:
         return plainToInstance(
           GetMultipleChoiceQuestionAdminDto,
           {
@@ -784,6 +787,7 @@ export class AdminQuestionService {
                   .toLowerCase() == 'true';
               break;
             case QuestionType.MULTIPLE_CHOICE:
+            case QuestionType.MULTIPLE_CHOICE_INPUT:
               const choices: CreateQuestionMultipleChoiceAdminDto[] = [];
               const items = (row['answersForMultipleChoice'] as string)
                 .replaceAll('\r', '')

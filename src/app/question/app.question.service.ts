@@ -47,6 +47,7 @@ export class AppQuestionService {
           { excludeExtraneousValues: true },
         );
       case QuestionType.MULTIPLE_CHOICE:
+      case QuestionType.MULTIPLE_CHOICE_INPUT:
         return plainToInstance(
           GetMultipleChoiceQuestionAppDto,
           {
