@@ -12,4 +12,8 @@ export class GetUnitListQueryAppDto {
   @IsOptional()
   @IsString()
   keyword?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  examId?: number;
 }

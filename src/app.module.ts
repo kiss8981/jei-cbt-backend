@@ -10,11 +10,13 @@ import { AdminAuthModule } from './admin/auth/admin.auth.module';
 import { AdminQuestionModule } from './admin/question/admin.question.module';
 import { AdminUnitModule } from './admin/unit/admin.unit.module';
 import { AppUnitModule } from './app/unit/app.unit.module';
+import { AppExamModule } from './app/exam/app.exam.module';
 import { AppQuestionSessionModule } from './app/question/session/app.question-session.module';
 import { AdminUploadModule } from './admin/upload/admin.upload.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppQuestionWrongModule } from './app/question/wrong/app.question-wrong.module';
 import { AdminQuestionSessionModule } from './admin/question/session/admin.question-session.module';
+import { AdminExamModule } from './admin/exam/admin.exam.module';
 
 @Module({
   imports: [
@@ -40,9 +42,11 @@ import { AdminQuestionSessionModule } from './admin/question/session/admin.quest
     AdminAuthModule,
     AdminQuestionSessionModule,
     AdminQuestionModule,
+    AdminExamModule,
     AdminUnitModule,
     AdminUploadModule,
     AppAuthModule,
+    AppExamModule,
     AppUnitModule,
     AppQuestionSessionModule,
     AppQuestionWrongModule,

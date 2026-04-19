@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
+import { EXAM_TYPE_LABELS } from 'src/common/constants/exam-type.enum';
 import { CreateUnitAdminDto } from 'src/dtos/admin/unit/create-unit.admin.dto';
 import { GetUnitListQueryAdminDto } from 'src/dtos/admin/unit/get-unit-list-query.admin.dto';
 import { GetUnitListAdminDto } from 'src/dtos/admin/unit/get-unit-list.admin.dto';
@@ -45,6 +46,9 @@ export class AdminUnitService {
               id: unit.id,
               name: unit.name,
               isDisplayed: unit.isDisplayed,
+              examId: unit.examId,
+              examType: unit.exam ? EXAM_TYPE_LABELS[unit.exam.type] : null,
+              examTitle: unit.exam?.title ?? null,
             },
             { excludeExtraneousValues: true },
           );
@@ -62,6 +66,7 @@ export class AdminUnitService {
   async create(createUnitDto: CreateUnitAdminDto) {
     const unit = await this.unitRepository.create({
       name: createUnitDto.name,
+      examId: createUnitDto.examId ?? null,
     });
 
     return plainToInstance(
@@ -70,6 +75,9 @@ export class AdminUnitService {
         id: unit.id,
         name: unit.name,
         isDisplayed: unit.isDisplayed,
+        examId: unit.examId,
+        examType: unit.exam ? EXAM_TYPE_LABELS[unit.exam.type] : null,
+        examTitle: unit.exam?.title ?? null,
       },
       { excludeExtraneousValues: true },
     );
@@ -78,6 +86,8 @@ export class AdminUnitService {
   async update(unitId: number, updateUnitDto: UpdateUnitAdminDto) {
     const unit = await this.unitRepository.update(unitId, {
       name: updateUnitDto.name,
+      isDisplayed: updateUnitDto.isDisplayed,
+      examId: updateUnitDto.examId ?? null,
     });
 
     return plainToInstance(
@@ -86,6 +96,9 @@ export class AdminUnitService {
         id: unit.id,
         name: unit.name,
         isDisplayed: unit.isDisplayed,
+        examId: unit.examId,
+        examType: unit.exam ? EXAM_TYPE_LABELS[unit.exam.type] : null,
+        examTitle: unit.exam?.title ?? null,
       },
       { excludeExtraneousValues: true },
     );

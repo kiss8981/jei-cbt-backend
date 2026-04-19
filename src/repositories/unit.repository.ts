@@ -20,6 +20,7 @@ export class UnitRepository {
   async findOneById(id: number) {
     return this.unitRepository.findOne({
       where: { id },
+      relations: ['exam'],
     });
   }
 
@@ -28,15 +29,24 @@ export class UnitRepository {
     limit: number,
     {
       keyword,
+      examId,
     }: {
       keyword?: string;
+      examId?: number;
     },
   ) {
     const query = this.unitRepository.createQueryBuilder('unit');
+    query.leftJoinAndSelect('unit.exam', 'exam');
 
     if (keyword) {
       query.andWhere('unit.name LIKE :keyword', {
         keyword: `%${keyword}%`,
+      });
+    }
+
+    if (examId) {
+      query.andWhere('unit.examId = :examId', {
+        examId,
       });
     }
 

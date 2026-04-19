@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUnitAdminDto {
   @IsString()
@@ -7,4 +7,8 @@ export class UpdateUnitAdminDto {
 
   @IsBoolean()
   isDisplayed: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  examId?: number | null;
 }

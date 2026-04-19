@@ -22,16 +22,18 @@ export class AppUnitService {
       {
         id: unit.id,
         name: unit.name,
+        examId: unit.examId,
       },
       { excludeExtraneousValues: true },
     );
   }
 
   async getAll(page: number, limit: number, query: GetUnitListQueryAppDto) {
-    const { keyword } = query;
+    const { keyword, examId } = query;
 
     const [units, total] = await this.unitRepository.findAndCount(page, limit, {
       keyword,
+      examId,
     });
 
     if (units.length === 0) {
@@ -59,6 +61,7 @@ export class AppUnitService {
             {
               id: unit.id,
               name: unit.name,
+              examId: unit.examId,
             },
             { excludeExtraneousValues: true },
           );

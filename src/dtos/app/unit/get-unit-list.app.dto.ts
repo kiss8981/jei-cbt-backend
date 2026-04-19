@@ -6,4 +6,7 @@ export class GetUnitListAppDto {
 
   @Expose()
   name: string;
+
+  @Expose()
+  examId: number | null;
 }
