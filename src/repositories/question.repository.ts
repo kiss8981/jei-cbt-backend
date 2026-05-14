@@ -123,6 +123,36 @@ export class QuestionRepository {
     return [questions, total];
   }
 
+  async findAllByFilters(filters: {
+    keyword?: string;
+    unitIds?: number[];
+    questionTypes?: QuestionType[];
+  }) {
+    const queryBuilder = this.questionRepository.createQueryBuilder('question');
+
+    if (filters.keyword) {
+      queryBuilder.andWhere('question.title LIKE :keyword', {
+        keyword: `%${filters.keyword}%`,
+      });
+    }
+
+    if (filters.unitIds && filters.unitIds.length > 0) {
+      queryBuilder.andWhere('question.unitId IN (:...unitIds)', {
+        unitIds: filters.unitIds,
+      });
+    }
+
+    if (filters.questionTypes && filters.questionTypes.length > 0) {
+      queryBuilder.andWhere('question.type IN (:...questionTypes)', {
+        questionTypes: filters.questionTypes,
+      });
+    }
+
+    queryBuilder.orderBy('question.createdAt', 'DESC');
+
+    return queryBuilder.getMany();
+  }
+
   async countByUnitIds(unitIds: number[]): Promise<number> {
     return this.questionRepository.count({
       where: { unit: { id: In(unitIds) } },

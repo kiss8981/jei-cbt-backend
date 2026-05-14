@@ -19,7 +19,10 @@ export class AnswerRepository {
   }
 
   async findByQuestionId(questionId: number) {
-    return this.answerRepository.find({ where: { questionId } });
+    return this.answerRepository.find({
+      where: { questionId },
+      order: { orderIndex: 'ASC', id: 'ASC' },
+    });
   }
 
   async deleteByQuestionId(questionId: number, entityManager?: EntityManager) {

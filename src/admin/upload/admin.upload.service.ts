@@ -48,7 +48,7 @@ export class AdminUploadService {
           uploadUrl,
           key: s3Key,
         });
-      } catch (error) {
+      } catch (error: any) {
         if (error instanceof CustomHttpException) throw error;
         else
           throw new CustomHttpException({

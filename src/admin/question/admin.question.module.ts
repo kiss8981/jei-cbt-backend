@@ -12,6 +12,7 @@ import { UnitRepository } from 'src/repositories/unit.repository';
 import { PhotoMapRepository } from 'src/repositories/photo-map-repository';
 import { PhotoMap } from 'src/entities/photo-map.entity';
 import { AdminUploadModule } from '../upload/admin.upload.module';
+import { AdminQuestionExcelService } from './admin.question-excel.service';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AdminUploadModule } from '../upload/admin.upload.module';
   controllers: [AdminQuestionController],
   providers: [
     AdminQuestionService,
+    AdminQuestionExcelService,
     QuestionRepository,
     AnswerRepository,
     UnitRepository,

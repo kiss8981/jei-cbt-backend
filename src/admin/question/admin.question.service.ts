@@ -204,12 +204,14 @@ export class AdminQuestionService {
         await this.answerRepository.create({
           content: dto.content,
           isCorrect: dto.isCorrect,
+          orderIndex: dtos.indexOf(dto),
           questionId: questionId,
         });
       } else {
         await this.answerRepository.updateById(dto.id, {
           content: dto.content,
           isCorrect: dto.isCorrect,
+          orderIndex: dtos.indexOf(dto),
         });
       }
     }
@@ -240,21 +242,25 @@ export class AdminQuestionService {
         // 왼쪽 항목 생성
         const leftItem = await this.answerRepository.create({
           content: dto.leftItem,
+          orderIndex: dtos.indexOf(dto),
           questionId: questionId,
         });
 
         await this.answerRepository.create({
           content: dto.rightItem,
+          orderIndex: dtos.indexOf(dto),
           questionId: questionId,
           pairingAnswerId: leftItem.id, // 짝꿍 ID 연결
         });
       } else {
         await this.answerRepository.updateById(dto.leftItemId, {
           content: dto.leftItem,
+          orderIndex: dtos.indexOf(dto),
         });
 
         await this.answerRepository.updateById(dto.pairingItemId, {
           content: dto.rightItem,
+          orderIndex: dtos.indexOf(dto),
         });
       }
     }
@@ -289,6 +295,7 @@ export class AdminQuestionService {
     for await (const updatedAnswer of updatedAnswers) {
       await this.answerRepository.updateById(updatedAnswer.id, {
         content: updatedAnswer.content,
+        orderIndex: updateQuestionSortAnswerAdminDto.indexOf(updatedAnswer),
       });
     }
 
@@ -298,6 +305,7 @@ export class AdminQuestionService {
           questionId: questionId,
           content: ca.content,
           isCorrect: true,
+          orderIndex: createdAnswers.indexOf(ca),
         })),
       );
     }
@@ -389,6 +397,7 @@ export class AdminQuestionService {
     if (!question) throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
 
     await this.questionRepository.update(id, {
+      unitId: dto.unitId ?? question.unitId,
       title: dto.title,
       explanation: dto.explanation,
       additionalText: dto.additionalText,
@@ -644,6 +653,7 @@ export class AdminQuestionService {
         {
           content: answerDto.content,
           isCorrect: answerDto.isCorrect,
+          orderIndex: dto.answersForMultipleChoice.indexOf(answerDto),
           questionId: question.id,
         },
         entityManager,
@@ -663,6 +673,7 @@ export class AdminQuestionService {
       const leftItem = await this.answerRepository.create(
         {
           content: answerDto.leftItem,
+          orderIndex: dto.answersForMatching.indexOf(answerDto),
           questionId: question.id,
         },
         entityManager,
@@ -670,6 +681,7 @@ export class AdminQuestionService {
       const rightItem = await this.answerRepository.create(
         {
           content: answerDto.rightItem,
+          orderIndex: dto.answersForMatching.indexOf(answerDto),
           questionId: question.id,
           pairingAnswerId: leftItem.id,
         },
@@ -691,6 +703,7 @@ export class AdminQuestionService {
         {
           content: shortAnswer,
           isCorrect: true,
+          orderIndex: dto.answersForShortAnswer.indexOf(shortAnswer),
           questionId: question.id,
         },
         entityManager,
@@ -863,7 +876,7 @@ export class AdminQuestionService {
           }
 
           transformedData.push(base);
-        } catch (error) {
+        } catch (error: any) {
           throw new Error(
             `Error processing row with title "${row['title']}": ${error.message}`,
           );
@@ -884,7 +897,7 @@ export class AdminQuestionService {
       try {
         // console.log(`Creating question titled "${dto.type} - ${dto.title}"...`);
         await this.create(dto);
-      } catch (error) {
+      } catch (error: any) {
         console.error(
           `Error creating question titled "${dto.type} - ${dto.title}": ${error.message}`,
         );
