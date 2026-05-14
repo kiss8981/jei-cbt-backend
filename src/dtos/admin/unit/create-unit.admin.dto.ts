@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateUnitAdminDto {
   @Expose()
@@ -8,6 +8,8 @@ export class CreateUnitAdminDto {
 
   @Expose()
   @IsOptional()
-  @IsNumber()
-  examId?: number | null;
+  @IsArray()
+  @Type(() => Number)
+  @IsNumber({}, { each: true })
+  examIds?: number[];
 }

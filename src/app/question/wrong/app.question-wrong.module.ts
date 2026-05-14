@@ -10,12 +10,14 @@ import { QuestionRepository } from 'src/repositories/question.repository';
 import { Unit } from 'src/entities/unit.entity';
 import { UnitRepository } from 'src/repositories/unit.repository';
 import { AppQuestionModule } from '../app.question.module';
+import { Exam } from 'src/entities/exam.entity';
+import { ExamRepository } from 'src/repositories/exam.repository';
 
 @Module({
   imports: [
     AppAuthModule,
     AppQuestionModule,
-    TypeOrmModule.forFeature([QuestionWrong, Question, Unit]),
+    TypeOrmModule.forFeature([QuestionWrong, Question, Unit, Exam]),
   ],
   controllers: [AppQuestionWrongController],
   providers: [
@@ -23,6 +25,7 @@ import { AppQuestionModule } from '../app.question.module';
     QuestionWrongRepository,
     QuestionRepository,
     UnitRepository,
+    ExamRepository,
   ],
   exports: [AppQuestionWrongService],
 })

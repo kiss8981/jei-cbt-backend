@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { EXAM_TYPE_LABELS } from 'src/common/constants/exam-type.enum';
 import { CreateUnitAdminDto } from 'src/dtos/admin/unit/create-unit.admin.dto';
@@ -7,11 +8,17 @@ import { GetUnitListAdminDto } from 'src/dtos/admin/unit/get-unit-list.admin.dto
 import { GetUnitAdminDto } from 'src/dtos/admin/unit/get-unit.admin.dto';
 import { UpdateUnitAdminDto } from 'src/dtos/admin/unit/update-unit.admin.dto';
 import { createPaginationDto } from 'src/dtos/common/pagination.dto';
+import { Unit } from 'src/entities/unit.entity';
 import { UnitRepository } from 'src/repositories/unit.repository';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class AdminUnitService {
-  constructor(private readonly unitRepository: UnitRepository) {}
+  constructor(
+    private readonly unitRepository: UnitRepository,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+  ) {}
 
   async getAll(page: number, limit: number, query: GetUnitListQueryAdminDto) {
     const { keyword } = query;
@@ -42,14 +49,7 @@ export class AdminUnitService {
         items: units.map((unit) => {
           return plainToInstance(
             GetUnitListAdminDto,
-            {
-              id: unit.id,
-              name: unit.name,
-              isDisplayed: unit.isDisplayed,
-              examId: unit.examId,
-              examType: unit.exam ? EXAM_TYPE_LABELS[unit.exam.type] : null,
-              examTitle: unit.exam?.title ?? null,
-            },
+            this.toAdminUnitDto(unit),
             { excludeExtraneousValues: true },
           );
         }),
@@ -64,49 +64,62 @@ export class AdminUnitService {
   }
 
   async create(createUnitDto: CreateUnitAdminDto) {
-    const unit = await this.unitRepository.create({
-      name: createUnitDto.name,
-      examId: createUnitDto.examId ?? null,
-    });
-
-    return plainToInstance(
-      GetUnitAdminDto,
+    const unit = await this.unitRepository.create(
       {
-        id: unit.id,
-        name: unit.name,
-        isDisplayed: unit.isDisplayed,
-        examId: unit.examId,
-        examType: unit.exam ? EXAM_TYPE_LABELS[unit.exam.type] : null,
-        examTitle: unit.exam?.title ?? null,
+        name: createUnitDto.name,
       },
-      { excludeExtraneousValues: true },
+      createUnitDto.examIds ?? [],
     );
+
+    return plainToInstance(GetUnitAdminDto, this.toAdminUnitDto(unit), {
+      excludeExtraneousValues: true,
+    });
   }
 
   async update(unitId: number, updateUnitDto: UpdateUnitAdminDto) {
     const unit = await this.unitRepository.update(unitId, {
       name: updateUnitDto.name,
       isDisplayed: updateUnitDto.isDisplayed,
-      examId: updateUnitDto.examId ?? null,
     });
 
-    return plainToInstance(
-      GetUnitAdminDto,
-      {
-        id: unit.id,
-        name: unit.name,
-        isDisplayed: unit.isDisplayed,
-        examId: unit.examId,
-        examType: unit.exam ? EXAM_TYPE_LABELS[unit.exam.type] : null,
-        examTitle: unit.exam?.title ?? null,
-      },
-      { excludeExtraneousValues: true },
-    );
+    // table // unit_exams
+    await this.entityManager
+      .query(`DELETE FROM unit_exams WHERE unitId = ?`, [unitId])
+      .then(() => {
+        if (updateUnitDto.examIds && updateUnitDto.examIds.length > 0) {
+          const values = updateUnitDto.examIds
+            .map((examId) => `(${unitId}, ${examId})`)
+            .join(', ');
+
+          return this.entityManager.query(
+            `INSERT INTO unit_exams (unitId, examId) VALUES ${values}`,
+          );
+        }
+      });
+
+    return plainToInstance(GetUnitAdminDto, this.toAdminUnitDto(unit), {
+      excludeExtraneousValues: true,
+    });
   }
 
   async delete(id: number) {
     await this.unitRepository.softDelete(id);
 
     return true;
+  }
+
+  private toAdminUnitDto(unit: any) {
+    return {
+      id: unit.id,
+      name: unit.name,
+      isDisplayed: unit.isDisplayed,
+      examIds: unit.exams?.map((exam) => exam.id) ?? [],
+      exams:
+        unit.exams?.map((exam) => ({
+          id: exam.id,
+          title: exam.title,
+          type: EXAM_TYPE_LABELS[exam.type],
+        })) ?? [],
+    };
   }
 }

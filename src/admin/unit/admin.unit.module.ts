@@ -3,11 +3,12 @@ import { AdminUnitService } from './admin.unit.service';
 import { AdminUnitController } from './admin.unit.controller';
 import { AdminAuthModule } from '../auth/admin.auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Exam } from 'src/entities/exam.entity';
 import { Unit } from 'src/entities/unit.entity';
 import { UnitRepository } from 'src/repositories/unit.repository';
 
 @Module({
-  imports: [AdminAuthModule, TypeOrmModule.forFeature([Unit])],
+  imports: [AdminAuthModule, TypeOrmModule.forFeature([Unit, Exam])],
   controllers: [AdminUnitController],
   providers: [AdminUnitService, UnitRepository],
 })

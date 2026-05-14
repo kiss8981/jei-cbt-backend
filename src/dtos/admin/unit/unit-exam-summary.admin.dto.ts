@@ -1,12 +1,12 @@
 import { Expose } from 'class-transformer';
 
-export class GetUnitListAppDto {
+export class UnitExamSummaryAdminDto {
   @Expose()
   id: number;
 
   @Expose()
-  name: string;
+  title: string;
 
   @Expose()
-  examIds: number[];
+  type: string;
 }

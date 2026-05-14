@@ -1,4 +1,5 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { UnitExamSummaryAdminDto } from './unit-exam-summary.admin.dto';
 
 export class GetUnitListAdminDto {
   @Expose()
@@ -11,11 +12,9 @@ export class GetUnitListAdminDto {
   isDisplayed: boolean;
 
   @Expose()
-  examId: number | null;
+  examIds: number[];
 
   @Expose()
-  examType: string | null;
-
-  @Expose()
-  examTitle: string | null;
+  @Type(() => UnitExamSummaryAdminDto)
+  exams: UnitExamSummaryAdminDto[];
 }

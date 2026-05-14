@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { ExamType } from 'src/common/constants/exam-type.enum';
 import { Unit } from './unit.entity';
@@ -17,6 +17,6 @@ export class Exam extends BaseEntity {
   @Column({ default: true })
   isDisplayed: boolean;
 
-  @OneToMany(() => Unit, (unit) => unit.exam)
+  @ManyToMany(() => Unit, (unit) => unit.exams)
   units: Unit[];
 }

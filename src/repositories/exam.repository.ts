@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Exam } from 'src/entities/exam.entity';
 import { ExamType } from 'src/common/constants/exam-type.enum';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 @Injectable()
 export class ExamRepository {
@@ -14,6 +14,12 @@ export class ExamRepository {
   async findOneById(id: number) {
     return this.examRepository.findOne({
       where: { id },
+    });
+  }
+
+  async findByIds(ids: number[]) {
+    return this.examRepository.find({
+      where: { id: In(ids) },
     });
   }
 

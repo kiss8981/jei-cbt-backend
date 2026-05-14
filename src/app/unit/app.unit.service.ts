@@ -22,7 +22,7 @@ export class AppUnitService {
       {
         id: unit.id,
         name: unit.name,
-        examId: unit.examId,
+        examIds: unit.exams?.map((exam) => exam.id) ?? [],
       },
       { excludeExtraneousValues: true },
     );
@@ -61,7 +61,7 @@ export class AppUnitService {
             {
               id: unit.id,
               name: unit.name,
-              examId: unit.examId,
+              examIds: unit.exams?.map((exam) => exam.id) ?? [],
             },
             { excludeExtraneousValues: true },
           );

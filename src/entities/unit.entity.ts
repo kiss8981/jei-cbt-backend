@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Question } from './question.entity';
 import { Exam } from './exam.entity';
@@ -11,12 +11,22 @@ export class Unit extends BaseEntity {
   @Column({ default: true })
   isDisplayed: boolean;
 
-  @ManyToOne(() => Exam, (exam) => exam.units, { nullable: true })
-  @JoinColumn({ name: 'examId' })
-  exam: Exam | null;
-
   @Column({ nullable: true })
   examId: number | null;
+
+  @ManyToMany(() => Exam, (exam) => exam.units)
+  @JoinTable({
+    name: 'unit_exams',
+    joinColumn: {
+      name: 'unitId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'examId',
+      referencedColumnName: 'id',
+    },
+  })
+  exams: Exam[];
 
   @OneToMany(() => Question, (question) => question.unit)
   questions: Question[];

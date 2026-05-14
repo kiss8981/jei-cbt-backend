@@ -19,6 +19,8 @@ import { QuestionSessionSegment } from 'src/entities/question-session-segment.en
 import { QuestionSessionSegmentRepository } from 'src/repositories/question-session-segment.repository';
 import { AppQuestionModule } from '../app.question.module';
 import { AppQuestionWrongModule } from '../wrong/app.question-wrong.module';
+import { Exam } from 'src/entities/exam.entity';
+import { ExamRepository } from 'src/repositories/exam.repository';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { AppQuestionWrongModule } from '../wrong/app.question-wrong.module';
       Unit,
       Answer,
       QuestionSessionSegment,
+      Exam,
     ]),
   ],
   controllers: [AppQuestionSessionController],
@@ -45,6 +48,7 @@ import { AppQuestionWrongModule } from '../wrong/app.question-wrong.module';
     UnitRepository,
     AnswerRepository,
     QuestionSessionSegmentRepository,
+    ExamRepository,
   ],
   exports: [AppQuestionSessionService],
 })

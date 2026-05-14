@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUnitAdminDto {
   @IsString()
@@ -8,7 +8,10 @@ export class UpdateUnitAdminDto {
   @IsBoolean()
   isDisplayed: boolean;
 
+  @Expose()
   @IsOptional()
-  @IsNumber()
-  examId?: number | null;
+  @IsArray()
+  @Type(() => Number)
+  @IsNumber({}, { each: true })
+  examIds?: number[];
 }

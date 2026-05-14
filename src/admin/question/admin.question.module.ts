@@ -12,12 +12,14 @@ import { UnitRepository } from 'src/repositories/unit.repository';
 import { PhotoMapRepository } from 'src/repositories/photo-map-repository';
 import { PhotoMap } from 'src/entities/photo-map.entity';
 import { AdminUploadModule } from '../upload/admin.upload.module';
+import { Exam } from 'src/entities/exam.entity';
+import { ExamRepository } from 'src/repositories/exam.repository';
 
 @Module({
   imports: [
     AdminAuthModule,
     AdminUploadModule,
-    TypeOrmModule.forFeature([Question, Answer, Unit, PhotoMap]),
+    TypeOrmModule.forFeature([Question, Answer, Unit, PhotoMap, Exam]),
   ],
   controllers: [AdminQuestionController],
   providers: [
@@ -26,6 +28,7 @@ import { AdminUploadModule } from '../upload/admin.upload.module';
     AnswerRepository,
     UnitRepository,
     PhotoMapRepository,
+    ExamRepository,
   ],
 })
 export class AdminQuestionModule {}
