@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QuestionSessionMap } from 'src/entities/question-session-map.entity';
-import { EntityManager, In, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class QuestionSessionMapRepository {
@@ -137,6 +137,32 @@ export class QuestionSessionMapRepository {
       select: ['questionId'],
     });
     return sessionMaps.map((map) => map.questionId);
+  }
+
+  async countPreviousAndNextBySessionId(
+    sessionId: number,
+    questionMapId: number,
+  ) {
+    const [previousQuestionCount, nextQuestionCount, totalQuestionCount] =
+      await Promise.all([
+        this.questionSessionMapRepository
+          .createQueryBuilder('qsm')
+          .where('qsm.questionSessionId = :sessionId', { sessionId })
+          .andWhere('qsm.id < :questionMapId', { questionMapId })
+          .getCount(),
+        this.questionSessionMapRepository
+          .createQueryBuilder('qsm')
+          .where('qsm.questionSessionId = :sessionId', { sessionId })
+          .andWhere('qsm.id > :questionMapId', { questionMapId })
+          .getCount(),
+        this.countBySessionId(sessionId),
+      ]);
+
+    return {
+      previousQuestionCount,
+      nextQuestionCount,
+      totalQuestionCount,
+    };
   }
 
   async findById(id: number) {

@@ -151,11 +151,25 @@ export class AppQuestionSessionService {
         await this.questionSessionMapRepository.getQuestionIdsBySessionId(
           session.id,
         );
+      const totalQuestionCount = await this.questionRepository.countByUnitIds(
+        session.referenceIds,
+      );
+      const remainingQuestionCount =
+        totalQuestionCount - excludeQuestionIds.length;
+
+      if (remainingQuestionCount <= 0) {
+        throw new CustomHttpException(ErrorCodes.QUESTION_NEXT_NOT_FOUND);
+      }
+
       const choiceQuestion =
         await this.questionRepository.findRandomByUnitIdsAndExcludeQuestionIds(
           session.referenceIds,
           excludeQuestionIds,
         );
+
+      if (!choiceQuestion) {
+        throw new CustomHttpException(ErrorCodes.QUESTION_NEXT_NOT_FOUND);
+      }
 
       const mapId = await this.questionSessionMapRepository.create({
         questionSessionId: session.id,
@@ -168,11 +182,13 @@ export class AppQuestionSessionService {
       );
 
       return plainToInstance(GetQuestionWithStepAppDto, {
-        isLastQuestion: false,
+        isLastQuestion: remainingQuestionCount === 1,
         questionMapId: mapId.id,
         question: questionResponse,
-        previousQuestionCount: null,
-        nextQuestionCount: null,
+        previousQuestionCount: excludeQuestionIds.length,
+        nextQuestionCount: remainingQuestionCount - 1,
+        totalQuestionCount,
+        userAnswer: null,
       });
     } else if (session.type === SessionType.MOCK) {
       const { nextQuestion, hasMore, nextQuestionCount, totalQuestionCount } =
@@ -304,29 +320,60 @@ export class AppQuestionSessionService {
       throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
     }
 
+    const currentQuestionMap =
+      await this.questionSessionMapRepository.getLastOpenedQuestionBySessionId(
+        session.id,
+      );
+
+    if (!currentQuestionMap) {
+      throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+    }
+
+    const question = await this.questionRepository.findById(
+      currentQuestionMap.questionId,
+    );
+    const questionResponse = await this.appQuestionService.getQuestionById(
+      currentQuestionMap.questionId,
+    );
+    const { previousQuestionCount, nextQuestionCount, totalQuestionCount } =
+      await this.questionSessionMapRepository.countPreviousAndNextBySessionId(
+        session.id,
+        currentQuestionMap.id,
+      );
+
     switch (session.type) {
       case SessionType.UNIT:
-        const currentQuestionMap =
-          await this.questionSessionMapRepository.getLastOpenedQuestionBySessionId(
-            session.id,
-          );
-        if (!currentQuestionMap) {
-          throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
-        }
-        const question = await this.questionRepository.findById(
-          currentQuestionMap.questionId,
-        );
-
-        const questionResponse = await this.appQuestionService.getQuestionById(
-          currentQuestionMap.questionId,
-        );
-
         return plainToInstance(GetQuestionWithStepAppDto, {
-          isLastQuestion: false,
+          isLastQuestion: nextQuestionCount === 0,
           questionMapId: currentQuestionMap.id,
           question: questionResponse,
-          previousQuestionCount: null,
-          nextQuestionCount: null,
+          previousQuestionCount,
+          nextQuestionCount,
+          totalQuestionCount,
+          userAnswer: null,
+        });
+      case SessionType.ALL:
+        return plainToInstance(GetQuestionWithStepAppDto, {
+          isLastQuestion: nextQuestionCount === 0,
+          questionMapId: currentQuestionMap.id,
+          question: questionResponse,
+          previousQuestionCount,
+          nextQuestionCount,
+          totalQuestionCount,
+          userAnswer: null,
+        });
+      case SessionType.MOCK:
+        return plainToInstance(GetQuestionWithStepAppDto, {
+          isLastQuestion: nextQuestionCount === 0,
+          questionMapId: currentQuestionMap.id,
+          question: questionResponse,
+          previousQuestionCount,
+          nextQuestionCount,
+          totalQuestionCount,
+          userAnswer:
+            currentQuestionMap?.userAnswer?.[
+              userAnswerKeyMapping[question.type]
+            ] || null,
         });
       default:
         throw new CustomHttpException(ErrorCodes.QUESTION_SESSION_NOT_FOUND);
@@ -424,6 +471,9 @@ export class AppQuestionSessionService {
   }
 
   async createSessionByAll(userId: number, unitIds: number[]) {
+    const totalQuestions =
+      await this.questionRepository.countByUnitIds(unitIds);
+
     const session = await this.questionSessionRepository.create({
       type: SessionType.ALL,
       referenceIds: unitIds,
@@ -435,7 +485,7 @@ export class AppQuestionSessionService {
       {
         id: session.id,
         type: session.type,
-        totalQuestions: -1,
+        totalQuestions,
       },
       {
         excludeExtraneousValues: true,
@@ -524,6 +574,9 @@ export class AppQuestionSessionService {
       await this.questionSessionMapRepository.getLastOpenedQuestionBySessionId(
         session.id,
       );
+    const totalQuestions = await this.questionRepository.countByUnitIds(
+      session.referenceIds,
+    );
 
     const durationMs = await this.questionSessionSegmentRepository.getElapsedMs(
       session.id,
@@ -536,6 +589,7 @@ export class AppQuestionSessionService {
         type: session.type,
         lastQuestionMapId: lastQuestionMap?.id || null,
         durationMs,
+        totalQuestions,
       },
       {
         excludeExtraneousValues: true,
