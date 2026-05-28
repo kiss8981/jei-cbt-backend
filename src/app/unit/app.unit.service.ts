@@ -5,11 +5,16 @@ import { CustomHttpException } from 'src/common/filters/custom-http.exception';
 import { GetUnitListQueryAppDto } from 'src/dtos/app/unit/get-unit-list-query.app.dto';
 import { GetUnitListAppDto } from 'src/dtos/app/unit/get-unit-list.app.dto';
 import { createPaginationDto } from 'src/dtos/common/pagination.dto';
+import { QuestionRepository } from 'src/repositories/question.repository';
 import { UnitRepository } from 'src/repositories/unit.repository';
+import { getGroupedQuestionTypes, groupQuestionTypesByUnitId } from './unit-question-types';
 
 @Injectable()
 export class AppUnitService {
-  constructor(private readonly unitRepository: UnitRepository) {}
+  constructor(
+    private readonly unitRepository: UnitRepository,
+    private readonly questionRepository: QuestionRepository,
+  ) {}
 
   async getById(unitId: number) {
     const unit = await this.unitRepository.findOneById(unitId);
@@ -17,12 +22,17 @@ export class AppUnitService {
       throw new CustomHttpException(ErrorCodes.UNIT_NOT_FOUND);
     }
 
+    const questionTypes = getGroupedQuestionTypes(
+      await this.questionRepository.findByUnitId(unit.id),
+    );
+
     return plainToInstance(
       GetUnitListAppDto,
       {
         id: unit.id,
         name: unit.name,
         examIds: unit.exams?.map((exam) => exam.id) ?? [],
+        questionTypes,
       },
       { excludeExtraneousValues: true },
     );
@@ -52,6 +62,10 @@ export class AppUnitService {
       );
     }
 
+    const groupedQuestionTypesByUnitId = groupQuestionTypesByUnitId(
+      await this.questionRepository.findByUnitIds(units.map((unit) => unit.id)),
+    );
+
     return plainToInstance(
       createPaginationDto(GetUnitListAppDto),
       {
@@ -62,6 +76,7 @@ export class AppUnitService {
               id: unit.id,
               name: unit.name,
               examIds: unit.exams?.map((exam) => exam.id) ?? [],
+              questionTypes: groupedQuestionTypesByUnitId[unit.id] ?? [],
             },
             { excludeExtraneousValues: true },
           );
