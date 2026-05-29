@@ -22,7 +22,7 @@ export class GetQuestionAdminDto {
   unitName: string;
 
   @Expose()
-  photos: GetPhotoMappingAdminDto;
+  photos: GetPhotoMappingAdminDto[];
 
   @Expose()
   createdAt: Date;
@@ -41,9 +41,7 @@ export class GetTrueFalseQuestionAdminDto extends GetQuestionAdminDto {
 
 export class GetMultipleChoiceQuestionAdminDto extends GetQuestionAdminDto {
   @Expose()
-  type:
-    | QuestionType.MULTIPLE_CHOICE
-    | QuestionType.MULTIPLE_CHOICE_INPUT;
+  type: QuestionType.MULTIPLE_CHOICE | QuestionType.MULTIPLE_CHOICE_INPUT;
 
   @Expose()
   question: string;
