@@ -10,6 +10,20 @@ export type GetQuestionAppDtoUnion =
   | GetMultipleShortAnswerQuestionAppDto
   | GetInterviewQuestionAppDto;
 
+export class GetQuestionPhotoAppDto {
+  @Expose()
+  id: number;
+
+  @Expose()
+  key: string;
+
+  @Expose()
+  originalFileName?: string;
+
+  @Expose()
+  orderIndex?: number;
+}
+
 export class GetQuestionAppDto {
   @Expose()
   id: number;
@@ -25,6 +39,9 @@ export class GetQuestionAppDto {
 
   @Expose()
   unitName: string;
+
+  @Expose()
+  photos: GetQuestionPhotoAppDto[];
 }
 
 export class GetTrueFalseQuestionAppDto extends GetQuestionAppDto {
@@ -40,9 +57,7 @@ export class GetTrueFalseQuestionAppDto extends GetQuestionAppDto {
 
 export class GetMultipleChoiceQuestionAppDto extends GetQuestionAppDto {
   @Expose()
-  type:
-    | QuestionType.MULTIPLE_CHOICE
-    | QuestionType.MULTIPLE_CHOICE_INPUT;
+  type: QuestionType.MULTIPLE_CHOICE | QuestionType.MULTIPLE_CHOICE_INPUT;
 
   @Expose()
   question: string;

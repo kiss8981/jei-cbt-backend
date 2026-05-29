@@ -20,7 +20,10 @@ export class PhotoMapRepository {
   }
 
   async findByQuestionId(questionId: number) {
-    return this.photoMapRepository.find({ where: { questionId } });
+    return this.photoMapRepository.find({
+      where: { questionId },
+      order: { orderIndex: 'ASC', id: 'ASC' },
+    });
   }
 
   async deleteByKey(key: string) {
