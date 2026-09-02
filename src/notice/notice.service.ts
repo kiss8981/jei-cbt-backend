@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import sanitizeHtml from 'sanitize-html';
+import sanitizeHtml = require('sanitize-html');
 import { ErrorCodes } from 'src/common/constants/error-code.enum';
 import { NoticeAssetStatus } from 'src/common/constants/notice-asset.enum';
 import { CustomHttpException } from 'src/common/filters/custom-http.exception';
@@ -198,13 +198,7 @@ export class NoticeService {
         'input',
       ],
       allowedAttributes: {
-        '*': [
-          'class',
-          'style',
-          'data-asset-id',
-          'data-type',
-          'data-checked',
-        ],
+        '*': ['class', 'style', 'data-asset-id', 'data-type', 'data-checked'],
         a: ['href', 'target', 'rel', 'download', 'data-asset-id'],
         img: ['src', 'alt', 'width', 'height', 'data-asset-id'],
         div: [
