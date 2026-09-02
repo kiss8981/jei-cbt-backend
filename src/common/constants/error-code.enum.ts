@@ -47,6 +47,10 @@ export const ErrorCodes = {
     code: 4302,
     message: '다음 문제가 존재하지 않습니다.',
   },
+  NOTICE_NOT_FOUND: {
+    code: 4400,
+    message: '존재하지 않는 게시글입니다.',
+  },
 
   S3_FILE_GET_ERROR: {
     code: 5100,

@@ -10,6 +10,7 @@ import {
   PutObjectCommand,
   CopyObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { CustomHttpException } from 'src/common/filters/custom-http.exception';
@@ -174,5 +175,20 @@ export class AwsS3ApiAdapter {
 
   public isTemporaryUploadKey(key: string): boolean {
     return key.startsWith('tmp/');
+  }
+
+  public getPublicUrl(key: string): string {
+    return `https://${this.bucketName}.s3.ap-northeast-2.amazonaws.com/${key}`;
+  }
+
+  async objectExists(key: string): Promise<boolean> {
+    try {
+      await this.s3Client.send(
+        new HeadObjectCommand({ Bucket: this.bucketName, Key: key }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

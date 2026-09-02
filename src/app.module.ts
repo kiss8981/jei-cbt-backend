@@ -17,6 +17,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppQuestionWrongModule } from './app/question/wrong/app.question-wrong.module';
 import { AdminQuestionSessionModule } from './admin/question/session/admin.question-session.module';
 import { AdminExamModule } from './admin/exam/admin.exam.module';
+import { NoticeModule } from './notice/notice.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AdminExamModule } from './admin/exam/admin.exam.module';
     AppUnitModule,
     AppQuestionSessionModule,
     AppQuestionWrongModule,
+    NoticeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
