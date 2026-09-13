@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { plainToClass, plainToInstance } from 'class-transformer';
 import { ErrorCodes } from 'src/common/constants/error-code.enum';
@@ -30,6 +34,7 @@ import {
 import { GetPhotoMappingAdminDto } from 'src/dtos/admin/upload/get-photo-mapping.admin.dto';
 import { createPaginationDto } from 'src/dtos/common/pagination.dto';
 import { Answer } from 'src/entities/answer.entity';
+import { Unit } from 'src/entities/unit.entity';
 import { Question } from 'src/entities/question.entity';
 import { AnswerRepository } from 'src/repositories/answer.repository';
 import { PhotoMapRepository } from 'src/repositories/photo-map-repository';
@@ -38,8 +43,6 @@ import { UnitRepository } from 'src/repositories/unit.repository';
 import { EntityManager, In, Repository } from 'typeorm';
 import { AdminUploadService } from '../upload/admin.upload.service';
 import { PhotoMappingTypeEnum } from 'src/common/constants/photo-mapping-type.enum';
-import * as xlsx from 'xlsx';
-import { validate } from 'class-validator';
 @Injectable()
 export class AdminQuestionService {
   constructor(
@@ -121,64 +124,118 @@ export class AdminQuestionService {
   private async updateQuestionByTrueFalseAnswer(
     questionId: number,
     dto: boolean,
+    manager: EntityManager,
   ) {
-    const existingAnswers =
-      await this.answerRepository.findByQuestionId(questionId);
+    const existingAnswers = await this.answerRepository.findByQuestionId(
+      questionId,
+      manager,
+    );
 
     if (existingAnswers.length === 0) {
       throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
     }
 
-    await this.answerRepository.updateById(existingAnswers[0].id, {
-      isCorrect: dto,
-    });
+    await this.answerRepository.updateById(
+      existingAnswers[0].id,
+      {
+        isCorrect: dto,
+      },
+      manager,
+    );
   }
 
   private async updateQuestionByInterviewAnswer(
     questionId: number,
     dto: string,
+    manager: EntityManager,
   ) {
-    const existingAnswers =
-      await this.answerRepository.findByQuestionId(questionId);
+    const existingAnswers = await this.answerRepository.findByQuestionId(
+      questionId,
+      manager,
+    );
 
     if (existingAnswers.length === 0) {
       throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
     }
 
-    await this.answerRepository.updateById(existingAnswers[0].id, {
-      content: dto,
-    });
+    await this.answerRepository.updateById(
+      existingAnswers[0].id,
+      {
+        content: dto,
+      },
+      manager,
+    );
   }
 
   private async updateQuestionByMultipleShortAnswer(
     questionId: number,
     dtos: UpdateQuestionMultipleShortAnswerAdminDto[],
+    manager: EntityManager,
   ) {
-    const existingAnswers =
-      await this.answerRepository.findByQuestionId(questionId);
+    if (
+      !Array.isArray(dtos) ||
+      !dtos.length ||
+      dtos.some(
+        (dto) =>
+          typeof dto?.content !== 'string' ||
+          !dto.content.trim() ||
+          !Number.isSafeInteger(dto.orderIndex) ||
+          dto.orderIndex < 0,
+      )
+    ) {
+      throw new BadRequestException(
+        '복수 단답형은 각 항목의 정답 내용과 0 이상의 빈칸 번호를 입력해야 합니다. 불필요한 빈 항목은 제거하세요.',
+      );
+    }
+    const existingAnswers = await this.answerRepository.findByQuestionId(
+      questionId,
+      manager,
+    );
 
-    const incomingIds = dtos.map((dto) => dto.id).filter((id) => id !== null);
+    const incomingIds = dtos
+      .filter((dto) => dto.id != null)
+      .map((dto) => Number(dto.id));
+    if (
+      new Set(incomingIds).size !== incomingIds.length ||
+      incomingIds.some(
+        (id) => !existingAnswers.some((answer) => Number(answer.id) === id),
+      )
+    ) {
+      throw new BadRequestException(
+        '해당 문제의 유효한 정답 ID를 사용하세요. 다시 불러온 뒤 저장하세요.',
+      );
+    }
     const answersToDelete = existingAnswers.filter(
       (answer) => !incomingIds.includes(Number(answer.id)),
     );
 
     if (answersToDelete.length > 0) {
-      await this.answerRepository.deleteByIds(answersToDelete.map((a) => a.id));
+      await this.answerRepository.deleteByIds(
+        answersToDelete.map((a) => a.id),
+        manager,
+      );
     }
 
     for (const dto of dtos) {
       if (!dto.id) {
-        await this.answerRepository.create({
-          content: dto.content,
-          isCorrect: true,
-          orderIndex: dto.orderIndex,
-          questionId: questionId,
-        });
+        await this.answerRepository.create(
+          {
+            content: dto.content,
+            isCorrect: true,
+            orderIndex: dto.orderIndex,
+            questionId: questionId,
+          },
+          manager,
+        );
       } else {
-        await this.answerRepository.updateById(dto.id, {
-          content: dto.content,
-          orderIndex: dto.orderIndex,
-        });
+        await this.answerRepository.updateById(
+          dto.id,
+          {
+            content: dto.content,
+            orderIndex: dto.orderIndex,
+          },
+          manager,
+        );
       }
     }
   }
@@ -186,9 +243,12 @@ export class AdminQuestionService {
   private async updateQuestionByMultipleChoiceAnswer(
     questionId: number,
     dtos: UpdateQuestionMultipleChoiceAdminDto[],
+    manager: EntityManager,
   ) {
-    const existingAnswers =
-      await this.answerRepository.findByQuestionId(questionId);
+    const existingAnswers = await this.answerRepository.findByQuestionId(
+      questionId,
+      manager,
+    );
 
     const incomingIds = dtos.map((dto) => dto.id).filter((id) => id !== null);
     const answersToDelete = existingAnswers.filter(
@@ -196,21 +256,31 @@ export class AdminQuestionService {
     );
 
     if (answersToDelete.length > 0) {
-      await this.answerRepository.deleteByIds(answersToDelete.map((a) => a.id));
+      await this.answerRepository.deleteByIds(
+        answersToDelete.map((a) => a.id),
+        manager,
+      );
     }
 
     for (const dto of dtos) {
       if (!dto.id) {
-        await this.answerRepository.create({
-          content: dto.content,
-          isCorrect: dto.isCorrect,
-          questionId: questionId,
-        });
+        await this.answerRepository.create(
+          {
+            content: dto.content,
+            isCorrect: dto.isCorrect,
+            questionId: questionId,
+          },
+          manager,
+        );
       } else {
-        await this.answerRepository.updateById(dto.id, {
-          content: dto.content,
-          isCorrect: dto.isCorrect,
-        });
+        await this.answerRepository.updateById(
+          dto.id,
+          {
+            content: dto.content,
+            isCorrect: dto.isCorrect,
+          },
+          manager,
+        );
       }
     }
   }
@@ -218,9 +288,12 @@ export class AdminQuestionService {
   private async updateQuestionByMatchingAnswer(
     questionId: number,
     dtos: UpdateQuestionMatchingAdminDto[],
+    manager: EntityManager,
   ) {
-    const existingAnswers =
-      await this.answerRepository.findByQuestionId(questionId);
+    const existingAnswers = await this.answerRepository.findByQuestionId(
+      questionId,
+      manager,
+    );
 
     const incomingIds = dtos
       .flatMap((dto) => [dto.leftItemId, dto.pairingItemId])
@@ -231,31 +304,48 @@ export class AdminQuestionService {
     );
 
     if (answersToDelete.length > 0) {
-      await this.answerRepository.deleteByIds(answersToDelete.map((a) => a.id));
+      await this.answerRepository.deleteByIds(
+        answersToDelete.map((a) => a.id),
+        manager,
+      );
     }
 
     for (const dto of dtos) {
       // CASE A: 새로운 항목 추가 (ID가 없는 경우)
       if (!dto.leftItemId && !dto.pairingItemId) {
         // 왼쪽 항목 생성
-        const leftItem = await this.answerRepository.create({
-          content: dto.leftItem,
-          questionId: questionId,
-        });
+        const leftItem = await this.answerRepository.create(
+          {
+            content: dto.leftItem,
+            questionId: questionId,
+          },
+          manager,
+        );
 
-        await this.answerRepository.create({
-          content: dto.rightItem,
-          questionId: questionId,
-          pairingAnswerId: leftItem.id, // 짝꿍 ID 연결
-        });
+        await this.answerRepository.create(
+          {
+            content: dto.rightItem,
+            questionId: questionId,
+            pairingAnswerId: leftItem.id, // 짝꿍 ID 연결
+          },
+          manager,
+        );
       } else {
-        await this.answerRepository.updateById(dto.leftItemId, {
-          content: dto.leftItem,
-        });
+        await this.answerRepository.updateById(
+          dto.leftItemId,
+          {
+            content: dto.leftItem,
+          },
+          manager,
+        );
 
-        await this.answerRepository.updateById(dto.pairingItemId, {
-          content: dto.rightItem,
-        });
+        await this.answerRepository.updateById(
+          dto.pairingItemId,
+          {
+            content: dto.rightItem,
+          },
+          manager,
+        );
       }
     }
   }
@@ -263,9 +353,35 @@ export class AdminQuestionService {
   private async updateQuestionBySortAnswer(
     questionId: number,
     updateQuestionSortAnswerAdminDto: UpdateQuestionSortAnswerAdminDto[],
+    manager: EntityManager,
   ) {
-    const existingAnswers =
-      await this.answerRepository.findByQuestionId(questionId);
+    const existingAnswers = await this.answerRepository.findByQuestionId(
+      questionId,
+      manager,
+    );
+
+    if (
+      !updateQuestionSortAnswerAdminDto.length ||
+      updateQuestionSortAnswerAdminDto.some(
+        (answer) =>
+          typeof answer.content !== 'string' || !answer.content.trim(),
+      )
+    ) {
+      throw new BadRequestException('단답형 정답을 하나 이상 입력하세요.');
+    }
+    const ids = updateQuestionSortAnswerAdminDto
+      .filter((answer) => answer.id != null)
+      .map((answer) => String(answer.id));
+    if (
+      new Set(ids).size !== ids.length ||
+      ids.some(
+        (id) => !existingAnswers.some((answer) => String(answer.id) === id),
+      )
+    ) {
+      throw new BadRequestException(
+        '해당 문제의 유효한 정답 ID를 사용하세요. 다시 불러온 뒤 저장하세요.',
+      );
+    }
 
     const deletedAnswers = existingAnswers.filter(
       (ea) =>
@@ -283,13 +399,19 @@ export class AdminQuestionService {
     if (deletedAnswers.length > 0) {
       await this.answerRepository.deleteByIds(
         deletedAnswers.map((da) => da.id),
+        manager,
       );
     }
 
     for await (const updatedAnswer of updatedAnswers) {
-      await this.answerRepository.updateById(updatedAnswer.id, {
-        content: updatedAnswer.content,
-      });
+      await this.answerRepository.updateById(
+        updatedAnswer.id,
+        {
+          content: updatedAnswer.content,
+          isCorrect: true,
+        },
+        manager,
+      );
     }
 
     if (createdAnswers.length > 0) {
@@ -299,12 +421,17 @@ export class AdminQuestionService {
           content: ca.content,
           isCorrect: true,
         })),
+        manager,
       );
     }
   }
 
   async create(dto: CreateQuestionAdminDto) {
     await this.entityManager.transaction(async (manager) => {
+      await manager.findOneOrFail(Unit, {
+        where: { id: dto.unitId },
+        lock: { mode: 'pessimistic_write' },
+      });
       const question = await this.questionRepository.create(
         {
           title: dto.title,
@@ -384,33 +511,110 @@ export class AdminQuestionService {
     return { message: '문제가 성공적으로 생성되었습니다.' };
   }
 
+  async deleteMany(questionIds: number[]) {
+    if (
+      !Array.isArray(questionIds) ||
+      !questionIds.length ||
+      questionIds.length > 500 ||
+      questionIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
+    ) {
+      throw new BadRequestException(
+        '삭제할 문제를 1개 이상, 최대 500개 선택하세요.',
+      );
+    }
+    const ids = [...new Set(questionIds)].sort((a, b) => a - b);
+    return this.entityManager.transaction(async (manager) => {
+      const original = await manager.find(Question, {
+        where: { id: In(ids) },
+        withDeleted: true,
+      });
+      if (original.length !== ids.length)
+        throw new NotFoundException(
+          '선택한 문제 중 존재하지 않는 문제가 있습니다. 목록을 새로고침하세요.',
+        );
+      const unitIds = [
+        ...new Set(original.map((question) => Number(question.unitId))),
+      ].sort((a, b) => a - b);
+      await manager.find(Unit, {
+        where: { id: In(unitIds) },
+        withDeleted: true,
+        order: { id: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const current = await manager.find(Question, {
+        where: { id: In(ids) },
+        withDeleted: true,
+        order: { id: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const active = current.filter((question) => !question.deletedAt);
+      if (active.length)
+        await manager.softDelete(
+          Question,
+          active.map((question) => question.id),
+        );
+      return {
+        deletedCount: active.length,
+        alreadyDeletedCount: current.length - active.length,
+      };
+    });
+  }
+
   async update(id: number, dto: UpdateQuestionAdminDto) {
-    const question = await this.questionRepository.findById(id);
+    await this.entityManager.transaction(async (manager) => {
+      const question = await manager.findOne(Question, { where: { id } });
+      if (!question)
+        throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+      await manager.findOneOrFail(Unit, {
+        where: { id: question.unitId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      await this.updateWithManager(id, dto, manager);
+    });
+    return this.getById(id);
+  }
+
+  private async updateWithManager(
+    id: number,
+    dto: UpdateQuestionAdminDto,
+    manager: EntityManager,
+  ) {
+    const question = await manager.findOne(Question, {
+      where: { id },
+      lock: { mode: 'pessimistic_write' },
+    });
     if (!question) throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
 
-    await this.questionRepository.update(id, {
-      title: dto.title,
-      explanation: dto.explanation,
-      additionalText: dto.additionalText,
-    });
+    await this.questionRepository.update(
+      id,
+      {
+        title: dto.title,
+        explanation: dto.explanation,
+        additionalText: dto.additionalText,
+      },
+      manager,
+    );
 
     switch (question.type) {
       case QuestionType.SHORT_ANSWER:
         await this.updateQuestionBySortAnswer(
           id,
           dto.answersForShortAnswers || [],
+          manager,
         );
         break;
       case QuestionType.MATCHING:
         await this.updateQuestionByMatchingAnswer(
           id,
           dto.answersForMatching || [],
+          manager,
         );
         break;
       case QuestionType.TRUE_FALSE:
         await this.updateQuestionByTrueFalseAnswer(
           id,
           dto.answersForCorrectAnswerForTrueFalse,
+          manager,
         );
         break;
       case QuestionType.MULTIPLE_CHOICE:
@@ -418,22 +622,26 @@ export class AdminQuestionService {
         await this.updateQuestionByMultipleChoiceAnswer(
           id,
           dto.answersForMultipleChoice || [],
+          manager,
         );
         break;
       case QuestionType.MULTIPLE_SHORT_ANSWER:
         await this.updateQuestionByMultipleShortAnswer(
           id,
           dto.answersForMultipleShortAnswer || [],
+          manager,
         );
         break;
       case QuestionType.INTERVIEW:
-        await this.updateQuestionByInterviewAnswer(id, dto.answersForInterview);
+        await this.updateQuestionByInterviewAnswer(
+          id,
+          dto.answersForInterview,
+          manager,
+        );
         break;
       default:
         break;
     }
-
-    return this.getById(id);
   }
 
   async getById(id: number) {
@@ -754,141 +962,5 @@ export class AdminQuestionService {
       },
       entityManager,
     );
-  }
-  async createManyFromExcel(buffer: Buffer) {
-    const workbook = xlsx.read(buffer, { type: 'buffer' });
-    const sheets = workbook.SheetNames.filter(
-      (name) => name !== workbook.SheetNames[0],
-    );
-
-    const transformedData: CreateQuestionAdminDto[] = [];
-
-    for (const sheetName of sheets) {
-      const sheet = workbook.Sheets[sheetName]; // 첫 번째 시트 가져오기
-      const data = xlsx.utils.sheet_to_json(sheet, {
-        defval: null,
-        raw: false,
-      });
-      data.map((row: any) => {
-        try {
-          let base: CreateQuestionAdminDto = {
-            unitId: row['unitId'] as number,
-            type: row['type'].trim() as QuestionType,
-            title: row['title'] as string,
-            explanation: row['explanation'] as string,
-            additionalText: row['additionalText'] as string,
-          };
-
-          switch (base.type) {
-            case QuestionType.TRUE_FALSE:
-              base.answersForCorrectAnswerForTrueFalse =
-                row['answersForCorrectAnswerForTrueFalse']
-                  .toString()
-                  .toLowerCase() == 'true';
-              break;
-            case QuestionType.MULTIPLE_CHOICE:
-            case QuestionType.MULTIPLE_CHOICE_INPUT:
-              const choices: CreateQuestionMultipleChoiceAdminDto[] = [];
-              const items = (row['answersForMultipleChoice'] as string)
-                .replaceAll('\r', '')
-                .split('\n')
-                .filter((item) => item.trim() !== '');
-              const corrects = (
-                row['answersForMultipleChoiceIsCorrect'] as string
-              )
-                .replaceAll('\r', '')
-                .split('\n')
-                .filter((item) => item.trim() !== '')
-                .map((item) => item.trim().toLowerCase() == 'true');
-
-              items.map((item, idx) => {
-                choices.push({
-                  content: item.trim(),
-                  isCorrect: corrects[idx],
-                });
-              });
-              base.answersForMultipleChoice = choices;
-              break;
-            case QuestionType.MATCHING:
-              const matchings: any[] = [];
-              const leftItems = (row['answersForMatchingLeftItem'] as string)
-                .replaceAll('\r', '')
-                .split('\n')
-                .filter((item) => item.trim() !== '');
-              const rightItems = (row['answersForMatchingRightItem'] as string)
-                .replaceAll('\r', '')
-                .split('\n')
-                .filter((item) => item.trim() !== '');
-
-              leftItems.map((leftItem, idx) => {
-                matchings.push({
-                  leftItem: leftItem.trim(),
-                  rightItem: rightItems[idx].trim(),
-                });
-              });
-              base.answersForMatching = matchings;
-              break;
-            case QuestionType.SHORT_ANSWER:
-              const shortAnswers = (row['answersForShortAnswer'] as string)
-                .replaceAll('\r', '')
-                .split('\n')
-                .filter((item) => item.trim() !== '');
-              base.answersForShortAnswer = shortAnswers;
-              break;
-            case QuestionType.MULTIPLE_SHORT_ANSWER:
-              const multipleShortAnswers: any[] = [];
-              const orderIndexes = (
-                row['answersForMultipleShortAnswerOrderIndex'] as string
-              )
-                .replaceAll('\r', '')
-                .split('\n')
-                .map(Number);
-
-              const msaItems = (
-                row['answersForMultipleShortAnswerContent'] as string
-              )
-                .replaceAll('\r', '')
-                .split('\n');
-              msaItems.map((item, idx) => {
-                multipleShortAnswers.push({
-                  content: item.trim(),
-                  orderIndex: orderIndexes[idx],
-                });
-              });
-              base.answersForMultipleShortAnswer = multipleShortAnswers;
-              break;
-            case QuestionType.INTERVIEW:
-              base.answersForInterview = row['answersForInterview'] as string;
-              break;
-          }
-
-          transformedData.push(base);
-        } catch (error) {
-          throw new Error(
-            `Error processing row with title "${row['title']}": ${error.message}`,
-          );
-        }
-      });
-    }
-
-    const plainDtos = plainToInstance(CreateQuestionAdminDto, transformedData);
-    // QuestionType.MATCHING
-
-    // QuestionType.MULTIPLE_SHORT_ANSWER
-    // QuestionType.INTERVIEW
-    // QuestionType.MULTIPLE_CHOICE
-    // QuestionType.TRUE_FALSE
-    // QuestionType.SHORT_ANSWER
-
-    for await (const dto of plainDtos) {
-      try {
-        // console.log(`Creating question titled "${dto.type} - ${dto.title}"...`);
-        await this.create(dto);
-      } catch (error) {
-        console.error(
-          `Error creating question titled "${dto.type} - ${dto.title}": ${error.message}`,
-        );
-      }
-    }
   }
 }

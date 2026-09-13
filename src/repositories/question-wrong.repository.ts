@@ -30,6 +30,7 @@ export class QuestionWrongRepository {
   async findByUserIdAndWrongId(userId: number, wrongId: number) {
     return this.questionWrongRepository.findOne({
       where: { userId, id: wrongId },
+      relations: ['question'],
     });
   }
 
@@ -45,6 +46,11 @@ export class QuestionWrongRepository {
   ) {
     const queryBuilder =
       this.questionWrongRepository.createQueryBuilder('questionWrong');
+    queryBuilder.innerJoin(
+      'questionWrong.question',
+      'question',
+      'question.deletedAt IS NULL',
+    );
     queryBuilder.where('questionWrong.userId = :userId', { userId });
     queryBuilder.andWhere('questionWrong.isReviewed = :isReviewed', {
       isReviewed: false,

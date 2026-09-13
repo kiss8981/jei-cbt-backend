@@ -18,8 +18,14 @@ export class AnswerRepository {
       : this.answerRepository.save(newQuestion);
   }
 
-  async findByQuestionId(questionId: number) {
-    return this.answerRepository.find({ where: { questionId } });
+  async findByQuestionId(questionId: number, manager?: EntityManager) {
+    return (
+      manager ? manager.getRepository(Answer) : this.answerRepository
+    ).find({
+      where: { questionId },
+      order: { id: 'ASC' },
+      ...(manager ? { lock: { mode: 'pessimistic_write' as const } } : {}),
+    });
   }
 
   async deleteByQuestionId(questionId: number, entityManager?: EntityManager) {
@@ -30,16 +36,27 @@ export class AnswerRepository {
     }
   }
 
-  async deleteByIds(answerIds: number[]) {
-    return this.answerRepository.softDelete(answerIds);
+  async deleteByIds(answerIds: number[], manager?: EntityManager) {
+    return (
+      manager ? manager.getRepository(Answer) : this.answerRepository
+    ).softDelete(answerIds);
   }
 
-  async updateById(answerId: number, updateData: Partial<Answer>) {
-    return this.answerRepository.update({ id: answerId }, updateData);
+  async updateById(
+    answerId: number,
+    updateData: Partial<Answer>,
+    manager?: EntityManager,
+  ) {
+    return (
+      manager ? manager.getRepository(Answer) : this.answerRepository
+    ).update({ id: answerId }, updateData);
   }
 
-  async createMany(answers: Partial<Answer>[]) {
-    const newAnswers = this.answerRepository.create(answers);
-    return this.answerRepository.save(newAnswers);
+  async createMany(answers: Partial<Answer>[], manager?: EntityManager) {
+    const repository = manager
+      ? manager.getRepository(Answer)
+      : this.answerRepository;
+    const newAnswers = repository.create(answers);
+    return repository.save(newAnswers);
   }
 }

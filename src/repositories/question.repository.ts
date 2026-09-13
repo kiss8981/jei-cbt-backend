@@ -18,9 +18,10 @@ export class QuestionRepository {
     });
   }
 
-  async findByIds(ids: number[]) {
+  async findByIds(ids: number[], withDeleted = false) {
     return this.questionRepository.find({
       where: { id: In(ids) },
+      withDeleted,
     });
   }
 

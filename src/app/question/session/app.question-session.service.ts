@@ -69,6 +69,7 @@ export class AppQuestionSessionService {
 
     const questions = await this.questionRepository.findByIds(
       sessionMaps.map((map) => map.questionId),
+      true,
     );
 
     return plainToInstance(GetQuestionSessionResultAppDto, {
@@ -326,7 +327,7 @@ export class AppQuestionSessionService {
       );
 
     if (!currentQuestionMap) {
-      throw new CustomHttpException(ErrorCodes.QUESTION_NOT_FOUND);
+      return this.getNextQuestion(userId, sessionId);
     }
 
     const question = await this.questionRepository.findById(

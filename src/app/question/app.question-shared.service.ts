@@ -91,7 +91,11 @@ export class AppQuestionSharedService {
         break;
 
       case QuestionType.SHORT_ANSWER:
-        answer = correctAnswers.find((ans) => ans.isCorrect)?.content || null;
+        answer =
+          correctAnswers
+            .filter((ans) => ans.isCorrect && ans.content?.trim())
+            .map((ans) => ans.content)
+            .join(' / ') || null;
         userAnswerMapped = userAnswer.answersForShortAnswer.trim();
         break;
 
@@ -240,13 +244,18 @@ export class AppQuestionSharedService {
         };
 
       case QuestionType.SHORT_ANSWER:
-        const correctShortAnswer = correctAnswers.find(
-          (ans) => ans.isCorrect,
-        )?.content;
+        const submittedShortAnswer = this.normalizeText(
+          userAnswer.answersForShortAnswer ?? '',
+        );
         return {
           isCorrect:
-            correctShortAnswer.trim().toLowerCase() ==
-            userAnswer.answersForShortAnswer.trim().toLowerCase(),
+            submittedShortAnswer.length > 0 &&
+            correctAnswers.some(
+              (ans) =>
+                ans.isCorrect &&
+                typeof ans.content === 'string' &&
+                this.normalizeText(ans.content) === submittedShortAnswer,
+            ),
           explanation,
           answer,
         };

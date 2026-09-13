@@ -35,7 +35,7 @@ export class AppQuestionWrongService {
         wrongId,
       );
 
-    if (!wrongQuestion) {
+    if (!wrongQuestion || !wrongQuestion.question) {
       throw new CustomHttpException(ErrorCodes.WRONG_QUESTION_NOT_FOUND);
     }
 
@@ -65,7 +65,7 @@ export class AppQuestionWrongService {
         wrongId,
       );
 
-    if (!wrongQuestion) {
+    if (!wrongQuestion || !wrongQuestion.question) {
       throw new CustomHttpException(ErrorCodes.WRONG_QUESTION_NOT_FOUND);
     }
 

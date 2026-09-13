@@ -14,16 +14,26 @@ import { PhotoMap } from 'src/entities/photo-map.entity';
 import { AdminUploadModule } from '../upload/admin.upload.module';
 import { Exam } from 'src/entities/exam.entity';
 import { ExamRepository } from 'src/repositories/exam.repository';
+import { QuestionExcelBatch } from 'src/entities/question-excel-batch.entity';
+import { AdminQuestionExcelService } from './admin.question-excel.service';
 
 @Module({
   imports: [
     AdminAuthModule,
     AdminUploadModule,
-    TypeOrmModule.forFeature([Question, Answer, Unit, PhotoMap, Exam]),
+    TypeOrmModule.forFeature([
+      Question,
+      Answer,
+      Unit,
+      PhotoMap,
+      Exam,
+      QuestionExcelBatch,
+    ]),
   ],
   controllers: [AdminQuestionController],
   providers: [
     AdminQuestionService,
+    AdminQuestionExcelService,
     QuestionRepository,
     AnswerRepository,
     UnitRepository,

@@ -132,10 +132,12 @@ export class QuestionSessionMapRepository {
   }
 
   async getQuestionIdsBySessionId(sessionId: number) {
-    const sessionMaps = await this.questionSessionMapRepository.find({
-      where: { questionSessionId: sessionId },
-      select: ['questionId'],
-    });
+    const sessionMaps = await this.questionSessionMapRepository
+      .createQueryBuilder('qsm')
+      .innerJoin('qsm.question', 'question', 'question.deletedAt IS NULL')
+      .where('qsm.questionSessionId = :sessionId', { sessionId })
+      .select(['qsm.questionId'])
+      .getMany();
     return sessionMaps.map((map) => map.questionId);
   }
 
@@ -143,19 +145,20 @@ export class QuestionSessionMapRepository {
     sessionId: number,
     questionMapId: number,
   ) {
+    const active = () =>
+      this.questionSessionMapRepository
+        .createQueryBuilder('qsm')
+        .innerJoin('qsm.question', 'question', 'question.deletedAt IS NULL')
+        .where('qsm.questionSessionId = :sessionId', { sessionId });
     const [previousQuestionCount, nextQuestionCount, totalQuestionCount] =
       await Promise.all([
-        this.questionSessionMapRepository
-          .createQueryBuilder('qsm')
-          .where('qsm.questionSessionId = :sessionId', { sessionId })
+        active()
           .andWhere('qsm.id < :questionMapId', { questionMapId })
           .getCount(),
-        this.questionSessionMapRepository
-          .createQueryBuilder('qsm')
-          .where('qsm.questionSessionId = :sessionId', { sessionId })
+        active()
           .andWhere('qsm.id > :questionMapId', { questionMapId })
           .getCount(),
-        this.countBySessionId(sessionId),
+        active().getCount(),
       ]);
 
     return {
