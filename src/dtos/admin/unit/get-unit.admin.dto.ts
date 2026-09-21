@@ -12,6 +12,9 @@ export class GetUnitAdminDto {
   isDisplayed: boolean;
 
   @Expose()
+  questionCount: number;
+
+  @Expose()
   examIds: number[];
 
   @Expose()

@@ -129,4 +129,23 @@ export class QuestionRepository {
       where: { unit: { id: In(unitIds) } },
     });
   }
+
+  async countGroupedByUnitIds(unitIds: number[]): Promise<Map<number, number>> {
+    if (unitIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.questionRepository
+      .createQueryBuilder('question')
+      .select('question.unitId', 'unitId')
+      .addSelect('COUNT(question.id)', 'count')
+      .where('question.unitId IN (:...unitIds)', { unitIds })
+      .groupBy('question.unitId')
+      .getRawMany<{ unitId: number; count: string }>();
+
+    return rows.reduce((acc, row) => {
+      acc.set(Number(row.unitId), Number(row.count));
+      return acc;
+    }, new Map<number, number>());
+  }
 }

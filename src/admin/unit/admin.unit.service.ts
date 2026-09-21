@@ -1,23 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
+import { ErrorCodes } from 'src/common/constants/error-code.enum';
 import { EXAM_TYPE_LABELS } from 'src/common/constants/exam-type.enum';
+import { CustomHttpException } from 'src/common/filters/custom-http.exception';
 import { CreateUnitAdminDto } from 'src/dtos/admin/unit/create-unit.admin.dto';
 import { GetUnitListQueryAdminDto } from 'src/dtos/admin/unit/get-unit-list-query.admin.dto';
 import { GetUnitListAdminDto } from 'src/dtos/admin/unit/get-unit-list.admin.dto';
 import { GetUnitAdminDto } from 'src/dtos/admin/unit/get-unit.admin.dto';
 import { UpdateUnitAdminDto } from 'src/dtos/admin/unit/update-unit.admin.dto';
 import { createPaginationDto } from 'src/dtos/common/pagination.dto';
-import { Unit } from 'src/entities/unit.entity';
+import { QuestionRepository } from 'src/repositories/question.repository';
 import { UnitRepository } from 'src/repositories/unit.repository';
-import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class AdminUnitService {
   constructor(
     private readonly unitRepository: UnitRepository,
-    @InjectEntityManager()
-    private readonly entityManager: EntityManager,
+    private readonly questionRepository: QuestionRepository,
   ) {}
 
   async getAll(page: number, limit: number, query: GetUnitListQueryAdminDto) {
@@ -43,13 +42,17 @@ export class AdminUnitService {
       );
     }
 
+    const questionCounts = await this.questionRepository.countGroupedByUnitIds(
+      units.map((unit) => unit.id),
+    );
+
     return plainToInstance(
       createPaginationDto(GetUnitListAdminDto),
       {
         items: units.map((unit) => {
           return plainToInstance(
             GetUnitListAdminDto,
-            this.toAdminUnitDto(unit),
+            this.toAdminUnitDto(unit, questionCounts.get(Number(unit.id)) ?? 0),
             { excludeExtraneousValues: true },
           );
         }),
@@ -64,55 +67,93 @@ export class AdminUnitService {
   }
 
   async create(createUnitDto: CreateUnitAdminDto) {
+    const name = this.normalizeName(createUnitDto.name);
+    await this.ensureNameNotDuplicated(name);
+
     const unit = await this.unitRepository.create(
       {
-        name: createUnitDto.name,
+        name,
       },
       createUnitDto.examIds ?? [],
     );
 
-    return plainToInstance(GetUnitAdminDto, this.toAdminUnitDto(unit), {
+    return plainToInstance(GetUnitAdminDto, this.toAdminUnitDto(unit, 0), {
       excludeExtraneousValues: true,
     });
   }
 
   async update(unitId: number, updateUnitDto: UpdateUnitAdminDto) {
-    const unit = await this.unitRepository.update(unitId, {
-      name: updateUnitDto.name,
-      isDisplayed: updateUnitDto.isDisplayed,
-    });
+    const name = this.normalizeName(updateUnitDto.name);
+    await this.ensureNameNotDuplicated(name, unitId);
 
-    // table // unit_exams
-    await this.entityManager
-      .query(`DELETE FROM unit_exams WHERE unitId = ?`, [unitId])
-      .then(() => {
-        if (updateUnitDto.examIds && updateUnitDto.examIds.length > 0) {
-          const values = updateUnitDto.examIds
-            .map((examId) => `(${unitId}, ${examId})`)
-            .join(', ');
+    const unit = await this.unitRepository.update(
+      unitId,
+      {
+        name,
+        isDisplayed: updateUnitDto.isDisplayed,
+      },
+      updateUnitDto.examIds ?? [],
+    );
 
-          return this.entityManager.query(
-            `INSERT INTO unit_exams (unitId, examId) VALUES ${values}`,
-          );
-        }
-      });
+    if (!unit) {
+      throw new CustomHttpException(ErrorCodes.UNIT_NOT_FOUND);
+    }
 
-    return plainToInstance(GetUnitAdminDto, this.toAdminUnitDto(unit), {
-      excludeExtraneousValues: true,
-    });
+    const questionCount = await this.questionRepository.countByUnitIds([
+      unitId,
+    ]);
+
+    return plainToInstance(
+      GetUnitAdminDto,
+      this.toAdminUnitDto(unit, questionCount),
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async delete(id: number) {
+    const unit = await this.unitRepository.findOneById(id);
+
+    if (!unit) {
+      throw new CustomHttpException(ErrorCodes.UNIT_NOT_FOUND);
+    }
+
+    const questionCount = await this.questionRepository.countByUnitIds([id]);
+
+    if (questionCount > 0) {
+      throw new CustomHttpException(ErrorCodes.UNIT_HAS_QUESTIONS);
+    }
+
     await this.unitRepository.softDelete(id);
 
     return true;
   }
 
-  private toAdminUnitDto(unit: any) {
+  private normalizeName(name: string) {
+    const normalized = name?.trim() ?? '';
+
+    if (normalized.length === 0) {
+      throw new CustomHttpException(ErrorCodes.VALIDATION_FAILED);
+    }
+
+    return normalized;
+  }
+
+  private async ensureNameNotDuplicated(name: string, excludeId?: number) {
+    const duplicated = await this.unitRepository.findOneByName(name, excludeId);
+
+    if (duplicated) {
+      throw new CustomHttpException(ErrorCodes.UNIT_NAME_DUPLICATED);
+    }
+  }
+
+  private toAdminUnitDto(unit: any, questionCount = 0) {
     return {
       id: unit.id,
       name: unit.name,
       isDisplayed: unit.isDisplayed,
+      questionCount,
       examIds: unit.exams?.map((exam) => exam.id) ?? [],
       exams:
         unit.exams?.map((exam) => ({
