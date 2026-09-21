@@ -35,6 +35,14 @@ export const ErrorCodes = {
     code: 4200,
     message: '존재하지 않는 능력 단위 입니다.',
   },
+  UNIT_NAME_DUPLICATED: {
+    code: 4201,
+    message: '이미 존재하는 능력 단위명입니다.',
+  },
+  UNIT_HAS_QUESTIONS: {
+    code: 4202,
+    message: '문제가 등록된 능력 단위는 삭제할 수 없습니다.',
+  },
   QUESTION_SESSION_NOT_FOUND: {
     code: 4300,
     message: '존재하지 않는 세션입니다.',

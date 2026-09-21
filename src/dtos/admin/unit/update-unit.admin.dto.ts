@@ -1,8 +1,16 @@
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class UpdateUnitAdminDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsBoolean()

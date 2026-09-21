@@ -36,6 +36,18 @@ export class UnitRepository {
     });
   }
 
+  async findOneByName(name: string, excludeId?: number) {
+    const query = this.unitRepository
+      .createQueryBuilder('unit')
+      .where('unit.name = :name', { name });
+
+    if (excludeId) {
+      query.andWhere('unit.id != :excludeId', { excludeId });
+    }
+
+    return query.getOne();
+  }
+
   async findAndCount(
     page: number,
     limit: number,
