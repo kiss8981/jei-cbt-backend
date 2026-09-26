@@ -18,6 +18,8 @@ import { AppQuestionWrongModule } from './app/question/wrong/app.question-wrong.
 import { AdminQuestionSessionModule } from './admin/question/session/admin.question-session.module';
 import { AdminExamModule } from './admin/exam/admin.exam.module';
 import { NoticeModule } from './notice/notice.module';
+import { NotificationModule } from './notification/notification.module';
+import { AdminUserModule } from './admin/user/admin.user.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { NoticeModule } from './notice/notice.module';
     AppQuestionSessionModule,
     AppQuestionWrongModule,
     NoticeModule,
+    NotificationModule,
+    AdminUserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -23,6 +23,26 @@ export const ErrorCodes = {
     code: 4005,
     message: '가입되지 않은 사용자입니다.',
   },
+  PASSWORD_RESET_TOO_MANY_REQUESTS: {
+    code: 4006,
+    message: '인증번호 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+  },
+  PASSWORD_RESET_CODE_INVALID: {
+    code: 4007,
+    message: '인증번호가 올바르지 않습니다.',
+  },
+  PASSWORD_RESET_CODE_EXPIRED: {
+    code: 4008,
+    message: '인증번호가 만료되었습니다. 다시 요청해주세요.',
+  },
+  PASSWORD_RESET_TOKEN_INVALID: {
+    code: 4009,
+    message: '비밀번호 변경 요청이 만료되었거나 유효하지 않습니다.',
+  },
+  PASSWORD_RESET_PASSWORD_MISMATCH: {
+    code: 4010,
+    message: '비밀번호 확인이 일치하지 않습니다.',
+  },
   QUESTION_NOT_FOUND: {
     code: 4100,
     message: '존재하지 않는 문제입니다.',
