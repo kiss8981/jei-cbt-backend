@@ -427,7 +427,7 @@ export class AdminQuestionService {
   }
 
   async create(dto: CreateQuestionAdminDto) {
-    await this.entityManager.transaction(async (manager) => {
+    const questionId = await this.entityManager.transaction(async (manager) => {
       await manager.findOneOrFail(Unit, {
         where: { id: dto.unitId },
         lock: { mode: 'pessimistic_write' },
@@ -506,9 +506,14 @@ export class AdminQuestionService {
         default:
           break;
       }
+
+      return question.id;
     });
 
-    return { message: '문제가 성공적으로 생성되었습니다.' };
+    return {
+      questionId,
+      message: '문제가 성공적으로 생성되었습니다.',
+    };
   }
 
   async deleteMany(questionIds: number[]) {

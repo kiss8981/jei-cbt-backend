@@ -1,0 +1,21 @@
+# SDD ledger — plan: docs/superpowers/plans/2026-09-26-admin-users-password-reset-question-create.md
+
+- Ruling: Work in the existing `feat/unit-management` checkouts instead of a linked worktree — the feature spans two repositories and the user requires directly inspectable uncommitted changes — cost if wrong: changes are less isolated from concurrent work.
+- Ruling: Never commit or push implementation changes — explicit user instruction overrides plan-runner commit mechanics — cost if wrong: task recovery relies on this ledger and working-tree state instead of commits.
+- Ruling: Store this ledger beside the plan — the bundled Bash workspace script cannot create Windows drive-letter paths — cost if wrong: the ledger is visible as an untracked review file rather than ignored scratch data.
+- Pre-flight: Task 1 produces `NotificationService.enqueue/send`, Task 2 consumes `enqueue`; signatures match.
+- Pre-flight: Task 2 produces password-reset endpoints, Task 4 consumes the same three paths; paths match.
+- Pre-flight: Task 5 backend produces `questionId`, frontend consumes it for redirect; response contract matches.
+- Pre-flight: Tasks 3 and 5 modify both repositories in place; review checkpoints must run in each repository separately.
+- Baseline: backend `npm run build` passed.
+- Ruling: frontend baseline `npm run build` fails only because sandboxed network access cannot fetch Google `Nanum Gothic`; use lint/type checks during implementation and retry production build later — cost if wrong: a separate frontend build error could remain hidden behind the font-fetch failure.
+- Task 1: complete (uncommitted, tests: notification service 2/2 pass; backend build pass).
+- Task 2: complete (uncommitted, tests: password reset service 4/4 pass; backend build pass).
+- Task 3: Ruling: no new automated list/UI test — user requested tests only for important logic and the repository has no frontend test runner — cost if wrong: member search/pagination relies on build, type-check, and later manual verification.
+- Task 3: complete (uncommitted, backend build pass; frontend lint and `tsc --noEmit` pass).
+- Task 4: Ruling: no browser automation/UI unit suite added — the security-sensitive password-reset rules are covered in the backend service tests and the frontend repository has no test runner — cost if wrong: visual interaction still needs a manual smoke test with a configured Solapi template.
+- Task 4: complete (uncommitted, frontend lint and `tsc --noEmit` pass).
+- Task 5: Ruling: make the existing edit `Question` component accept create mode instead of duplicating its seven type-specific editors into another component — preserves identical functionality with a smaller change surface — cost if wrong: the file remains large and can be extracted later without changing behavior.
+- Task 5: complete (uncommitted, backend build pass; frontend lint and `tsc --noEmit` pass).
+- Review checkpoint: focused backend suites pass (2 suites, 6 tests); both repositories pass `git diff --check` (line-ending notices only); no implementation commit or push performed.
+- Final verification: backend full Jest run passed (7 suites, 50 tests; 1 suite/22 tests intentionally skipped), backend production build passed, frontend production build passed after allowing Google font download, and generated routes include `/admin/users`, `/admin/questions/create`, and `/auth/reset-password`.

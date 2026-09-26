@@ -6,6 +6,11 @@ import { Response } from 'express';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { User, UserPayload } from 'src/common/decorators/user.decorator';
 import { RefreshTokenAuthAppDto } from 'src/dtos/app/auth/refresh-token.auth.dto';
+import {
+  CompletePasswordResetAuthAppDto,
+  RequestPasswordResetAuthAppDto,
+  VerifyPasswordResetAuthAppDto,
+} from 'src/dtos/app/auth/password-reset.auth.dto';
 
 @Controller('auth')
 export class AppAuthController {
@@ -118,8 +123,18 @@ export class AppAuthController {
     return true;
   }
 
-  @Post('reset-password/verify')
-  async resetPasswordVerify(@Body('phone') phone: string) {
-    return this.appAuthService.resetPasswordVerifyPhone(phone);
+  @Post('password-reset/request')
+  requestPasswordReset(@Body() dto: RequestPasswordResetAuthAppDto) {
+    return this.appAuthService.requestPasswordReset(dto);
+  }
+
+  @Post('password-reset/verify')
+  verifyPasswordReset(@Body() dto: VerifyPasswordResetAuthAppDto) {
+    return this.appAuthService.verifyPasswordReset(dto);
+  }
+
+  @Post('password-reset/complete')
+  completePasswordReset(@Body() dto: CompletePasswordResetAuthAppDto) {
+    return this.appAuthService.completePasswordReset(dto);
   }
 }
